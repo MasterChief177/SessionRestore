@@ -247,6 +247,8 @@ textarea:focus {
 
 .kind {
   display: inline-block;
+  flex: none;
+  white-space: nowrap;
   padding: 1px 9px;
   border-radius: 999px;
   font-size: 11.5px;
@@ -261,6 +263,13 @@ textarea:focus {
   background: var(--accent-soft);
   color: var(--accent-strong);
   box-shadow: none;
+}
+
+/* "6 snapshots": a time window folding several snapshots */
+.kind-group {
+  background: transparent;
+  color: var(--accent-strong);
+  box-shadow: inset 0 0 0 1px var(--accent);
 }
 
 /* Tab group color dots */

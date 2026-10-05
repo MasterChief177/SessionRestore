@@ -1,4 +1,6 @@
 import { listSnapshots } from '../background/db.js';
+import { groupByWindow } from '../lib/grouping.js';
+import { getSettings } from '../lib/settings.js';
 import {
   busy,
   describeCounts,
@@ -14,7 +16,8 @@ import {
   toast,
 } from './common.js';
 
-const RECENT_COUNT = 6;
+const RECENT_COUNT = 6; // time windows shown
+const RECENT_SCAN = 200; // snapshots read to build them
 const $ = (id) => document.getElementById(id);
 
 async function restore(id, button) {
@@ -41,13 +44,18 @@ async function renderLastSession() {
   $('restore-last-session').onclick = (event) => restore(s.id, event.currentTarget);
 }
 
+/** One row per time window (same grouping as the main page); Restore brings back its last snapshot. */
 async function renderRecent() {
-  const { items } = await listSnapshots({ limit: RECENT_COUNT });
-  $('recent-empty').hidden = items.length > 0;
+  const [{ items }, settings] = await Promise.all([listSnapshots({ limit: RECENT_SCAN }), getSettings()]);
+  const groups = groupByWindow(items, settings.groupMinutes).slice(0, RECENT_COUNT);
+  $('recent-empty').hidden = groups.length > 0;
   $('recent').classList.add('fade-in');
   $('recent').replaceChildren(
-    ...items.map((s) => {
-      const seen = s.updatedAt ?? s.createdAt;
+    ...groups.map((group) => {
+      const s = group.items[0]; // newest in the window
+      const single = group.items.length === 1;
+      const labels = group.items.filter((x) => x.kind === 'manual' && x.label).map((x) => x.label);
+      const time = single ? s.createdAt : group.mark;
       return h(
         'li',
         {},
@@ -57,18 +65,18 @@ async function renderRecent() {
           h(
             'div',
             { class: 'recent-line' },
-            h('span', { class: 'recent-time', title: formatDateTime(s.createdAt) }, formatTime(s.createdAt)),
-            kindBadge(s.kind),
-            s.label ? h('span', { class: 'recent-label', title: s.label }, s.label) : null,
+            h('span', { class: 'recent-time', title: formatDateTime(time) }, formatTime(time)),
+            single ? kindBadge(s.kind) : h('span', { class: 'kind kind-group' }, `${group.items.length} snapshots`),
+            labels.length ? h('span', { class: 'recent-label', title: labels.join(', ') }, labels[0]) : null,
           ),
-          h('div', { class: 'recent-counts muted' }, `${describeCounts(s)} · ${formatRelative(seen)}`),
+          h('div', { class: 'recent-counts muted' }, `${describeCounts(s)} · ${formatRelative(s.updatedAt ?? s.createdAt)}`),
         ),
         h(
           'button',
           {
             type: 'button',
             class: 'small',
-            title: 'Restore into new windows',
+            title: single ? 'Restore into new windows' : `Restore the last snapshot in this window (${formatTime(s.createdAt)})`,
             onclick: (event) => restore(s.id, event.currentTarget),
           },
           'Restore',

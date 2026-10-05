@@ -63,6 +63,9 @@ const dayFormat = new Intl.DateTimeFormat(undefined, { weekday: 'long', day: 'nu
 const dayWithYearFormat = new Intl.DateTimeFormat(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
 export const formatTime = (ts) => timeFormat.format(ts);
+/** "03:42 – 03:47 PM", or a single time when both are in the same minute. */
+export const formatTimeRange = (from, to) =>
+  formatTime(from) === formatTime(to) ? formatTime(to) : timeFormat.formatRange(from, to);
 export const formatDateTime = (ts) => dateTimeFormat.format(ts);
 
 const startOfDay = (ts) => {

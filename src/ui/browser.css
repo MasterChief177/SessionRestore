@@ -157,13 +157,14 @@
   overflow: hidden;
 }
 
-.snap + .snap {
+.day-group > * + *,
+.group-items > * + * {
   border-top: 1px solid var(--border);
 }
 
 .snap-head {
   display: grid;
-  grid-template-columns: 88px 74px minmax(0, 1fr) auto;
+  grid-template-columns: 88px 104px minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
   padding: 11px 12px 11px 18px;
@@ -172,7 +173,7 @@
 }
 
 .snap-head:hover,
-.snap.expanded .snap-head {
+.expanded > .snap-head {
   background: var(--surface-2);
 }
 
@@ -233,12 +234,23 @@
   background: var(--surface);
 }
 
-.snap-details.entering {
+.entering {
   animation: soft-in 0.26s var(--ease) both;
 }
 
-.snap-details.leaving {
+.leaving {
   animation: soft-out 0.16s var(--ease) both;
+}
+
+/* A time window unfolded: its snapshots sit indented on a soft rail. */
+.group-items {
+  margin: 0 0 10px 30px;
+  border-left: 2px solid var(--accent-soft);
+  border-top: 1px solid var(--border);
+}
+
+.group-items .snap-head {
+  padding-left: 14px;
 }
 
 .detail-actions {

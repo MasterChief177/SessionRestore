@@ -9,10 +9,11 @@ A Chrome extension that keeps a running history of your open tabs, so you can ge
 - **Automatic snapshots.** Every time you open, close, move, pin or group tabs, a snapshot of all your windows is saved a moment later. Identical states are never saved twice, and pages that keep changing their title (unread counters and the like) don't flood the history.
 - **Crash recovery.** When the browser starts, the popup offers **Restore last session**: the final state from before the restart or crash.
 - **Manual snapshots.** Hit **Save now** (optionally with a label). Manual snapshots are never deleted automatically. Any automatic snapshot can be promoted with **Keep forever**.
+- **A tidy list.** Every change is saved, but the list folds snapshots into time windows (5 minutes by default, adjustable from 1 to 60 in Settings). Each snapshot joins the closest mark, seconds included, so with 5 minutes 3:42:29 goes to 3:40 and 3:42:31 to 3:45. A window shows how many snapshots it holds and restores its last one; unfold it to see them all.
 - **Restore** a whole snapshot, a single window, or a single tab. Restores always open in new windows and never close anything. Pinned tabs, tab groups (name, color, collapsed) and window size are recreated. By default only the active tab of each window loads; the rest load when you click them, so restoring 100+ tabs doesn't bog the browser down.
 - **Markdown export** of one snapshot or all of them, plus a lossless **JSON backup**.
 - **Import** an exported Markdown or JSON file. The importer also accepts plain lists of links, bare URLs, and OneTab-style `URL | Title` lines.
-- **Settings** for the debounce delay, URLs to ignore, retention, and lazy restore.
+- **Settings** for the debounce delay, URLs to ignore, list grouping, retention, and lazy restore.
 
 Everything stays on your computer. No accounts, no sync, no analytics, no network requests. Incognito windows are never recorded.
 

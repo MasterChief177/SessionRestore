@@ -14,6 +14,7 @@ function fill(settings) {
   $('daily-days').value = settings.dailyDays;
   $('max-snapshots').value = settings.maxSnapshots;
   $('lazy-restore').checked = settings.lazyRestore;
+  $('group-minutes').value = settings.groupMinutes;
 }
 
 function read() {
@@ -25,6 +26,7 @@ function read() {
     dailyDays: $('daily-days').value,
     maxSnapshots: $('max-snapshots').value,
     lazyRestore: $('lazy-restore').checked,
+    groupMinutes: $('group-minutes').value,
   };
 }
 

@@ -78,6 +78,18 @@
           </section>
 
           <section class="card">
+            <h2>Snapshot list</h2>
+            <label class="field inline">
+              <span class="field-label">Group snapshots into windows of</span>
+              <span class="field-input"><input id="group-minutes" type="number" min="1" max="60" step="1" required /> minutes</span>
+            </label>
+            <p class="hint">
+              Each snapshot joins the nearest mark, seconds included: with 5 minutes, 3:42:29 goes to 3:40 and 3:42:31 to 3:45.
+              Every change is still saved; this only changes how the list is shown. Minimum 1 minute.
+            </p>
+          </section>
+
+          <section class="card">
             <h2>Retention</h2>
             <p class="hint">Applies to automatic snapshots. Manual snapshots are never deleted automatically.</p>
             <label class="field inline">

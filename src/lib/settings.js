@@ -16,6 +16,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
   ignoreRules: Object.freeze(['chrome://newtab/', 'about:blank']),
   // Only load the active tab of each restored window; the rest stay unloaded until clicked.
   lazyRestore: true,
+  // The snapshot list folds snapshots into windows of this many minutes (display only).
+  groupMinutes: 5,
 });
 
 function clampInt(value, min, max, fallback) {
@@ -43,6 +45,7 @@ export function normalizeSettings(raw) {
           .slice(0, 500)
       : [...d.ignoreRules],
     lazyRestore: typeof input.lazyRestore === 'boolean' ? input.lazyRestore : d.lazyRestore,
+    groupMinutes: clampInt(input.groupMinutes, 1, 60, d.groupMinutes),
   };
 }
 

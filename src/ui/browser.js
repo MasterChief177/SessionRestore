@@ -8,7 +8,9 @@ import {
   updateSnapshot,
 } from '../background/db.js';
 import { prepareImport, snapshotsToJson } from '../lib/backup.js';
+import { groupByWindow } from '../lib/grouping.js';
 import { snapshotToMarkdown, snapshotsToMarkdown } from '../lib/markdown.js';
+import { DEFAULT_SETTINGS, SETTINGS_KEY, getSettings, normalizeSettings } from '../lib/settings.js';
 import { initSettingsView, renderStorage } from './settings-view.js';
 import {
   busy,
@@ -20,6 +22,7 @@ import {
   formatDateTime,
   formatDay,
   formatTime,
+  formatTimeRange,
   h,
   hostOf,
   icon,
@@ -29,7 +32,8 @@ import {
   toast,
 } from './common.js';
 
-const PAGE_SIZE = 50;
+// Generous, because the list folds snapshots into time windows.
+const PAGE_SIZE = 200;
 const FILTERS = {
   all: null,
   manual: ['manual'],
@@ -40,7 +44,9 @@ const state = {
   filter: 'all',
   items: [],
   hasMore: false,
-  expanded: new Set(),
+  expanded: new Set(), // snapshot ids with details open
+  openGroups: new Set(), // window marks that are unfolded
+  groupMinutes: DEFAULT_SETTINGS.groupMinutes,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -288,33 +294,57 @@ function fadeIn(el) {
   el.classList.add('fade-in');
 }
 
-/** Expand or collapse one row in place, so nothing else on the page jumps or re-renders. */
-function toggle(id) {
-  const article = $('list').querySelector(`.snap[data-id="${id}"]`);
-  const snapshot = state.items.find((s) => s.id === id);
-  if (!article || !snapshot) return;
-
-  const expanded = !state.expanded.has(id);
-  if (expanded) state.expanded.add(id);
-  else state.expanded.delete(id);
-  article.classList.toggle('expanded', expanded);
-  article.querySelector('.toggle').setAttribute('aria-expanded', String(expanded));
-
-  const current = article.querySelector('.snap-details');
-  if (expanded) {
+/**
+ * Open or close the panel (`className`) inside `host` in place, with a soft slide, so nothing
+ * else on the page jumps or re-renders.
+ */
+function setPanel(host, className, open, build) {
+  host.classList.toggle('expanded', open);
+  host.querySelector(':scope > .snap-head .toggle')?.setAttribute('aria-expanded', String(open));
+  const current = [...host.children].find((el) => el.classList.contains(className));
+  // Nested panels animate too and their events bubble, so only react to our own.
+  const onEnd = (panel, fn) =>
+    panel.addEventListener('animationend', function handler(event) {
+      if (event.target !== panel) return;
+      panel.removeEventListener('animationend', handler);
+      fn();
+    });
+  if (open) {
     current?.remove();
-    const details = renderDetails(snapshot);
-    details.classList.add('entering');
-    details.addEventListener('animationend', () => details.classList.remove('entering'), { once: true });
-    article.append(details);
+    const panel = build();
+    panel.classList.add('entering');
+    onEnd(panel, () => panel.classList.remove('entering'));
+    host.append(panel);
   } else if (current) {
     if (reducedMotion.matches) {
       current.remove();
       return;
     }
     current.classList.add('leaving');
-    current.addEventListener('animationend', () => current.remove(), { once: true });
+    onEnd(current, () => current.remove());
   }
+}
+
+/** Expand or collapse one snapshot's details. */
+function toggle(id) {
+  const article = $('list').querySelector(`.snap[data-id="${id}"]`);
+  const snapshot = state.items.find((s) => s.id === id);
+  if (!article || !snapshot) return;
+  const open = !state.expanded.has(id);
+  if (open) state.expanded.add(id);
+  else state.expanded.delete(id);
+  setPanel(article, 'snap-details', open, () => renderDetails(snapshot));
+}
+
+/** Unfold or fold a time window to show the snapshots inside it. */
+function toggleGroup(mark) {
+  const article = $('list').querySelector(`.snap-group[data-mark="${mark}"]`);
+  const group = groupByWindow(state.items, state.groupMinutes).find((g) => g.mark === mark);
+  if (!article || !group) return;
+  const open = !state.openGroups.has(mark);
+  if (open) state.openGroups.add(mark);
+  else state.openGroups.delete(mark);
+  setPanel(article, 'group-items', open, () => h('div', { class: 'group-items' }, group.items.map(renderItem)));
 }
 
 function renderItem(snapshot) {
@@ -381,17 +411,86 @@ function renderItem(snapshot) {
   );
 }
 
+/** One row for a time window holding several snapshots. Restore brings back the last one. */
+function renderGroup(group) {
+  const open = state.openGroups.has(group.mark);
+  const latest = group.items[0];
+  const oldest = group.items.at(-1);
+  const labels = group.items.filter((s) => s.kind === 'manual' && s.label).map((s) => s.label);
+
+  const head = h(
+    'div',
+    {
+      class: 'snap-head',
+      onclick: (event) => {
+        if (!event.target.closest('button, a')) toggleGroup(group.mark);
+      },
+    },
+    h(
+      'div',
+      { class: 'snap-when', title: `Snapshots closest to ${formatTime(group.mark)}` },
+      h('span', { class: 'snap-time' }, formatTime(group.mark)),
+    ),
+    h('span', { class: 'kind kind-group' }, `${group.items.length} snapshots`),
+    h(
+      'div',
+      { class: 'snap-summary' },
+      labels.length
+        ? h('span', { class: 'snap-label', title: labels.join(', ') }, labels.length > 1 ? `${labels[0]} +${labels.length - 1}` : labels[0])
+        : null,
+      h('span', { class: 'muted' }, `${formatTimeRange(oldest.createdAt, latest.createdAt)} · last: ${describeCounts(latest)}`),
+    ),
+    h(
+      'div',
+      { class: 'snap-actions' },
+      h(
+        'button',
+        {
+          type: 'button',
+          class: 'small',
+          title: `Restore the last snapshot in this window (${formatTime(latest.createdAt)})`,
+          onclick: (e) => restore(latest.id, {}, e.currentTarget),
+        },
+        icon('restore'),
+        'Restore',
+      ),
+      h(
+        'button',
+        {
+          type: 'button',
+          class: 'small ghost toggle',
+          'aria-expanded': String(open),
+          onclick: () => toggleGroup(group.mark),
+        },
+        icon('chevron'),
+        'Show',
+      ),
+    ),
+  );
+
+  return h(
+    'article',
+    { class: open ? 'snap-group expanded' : 'snap-group', dataset: { mark: group.mark } },
+    head,
+    open ? h('div', { class: 'group-items' }, group.items.map(renderItem)) : null,
+  );
+}
+
 function render() {
   const days = [];
-  for (const snapshot of state.items) {
-    const label = formatDay(snapshot.createdAt);
-    if (days.at(-1)?.label !== label) days.push({ label, items: [] });
-    days.at(-1).items.push(snapshot);
+  for (const group of groupByWindow(state.items, state.groupMinutes)) {
+    const label = formatDay(group.mark);
+    if (days.at(-1)?.label !== label) days.push({ label, groups: [] });
+    days.at(-1).groups.push(group);
   }
   $('list').replaceChildren(
     ...days.flatMap((day) => [
       h('h2', { class: 'day-heading' }, day.label),
-      h('div', { class: 'day-group' }, day.items.map(renderItem)),
+      h(
+        'div',
+        { class: 'day-group' },
+        day.groups.map((group) => (group.items.length === 1 ? renderItem(group.items[0]) : renderGroup(group))),
+      ),
     ]),
   );
   $('empty').hidden = state.items.length > 0;
@@ -482,10 +581,24 @@ chrome.runtime.onMessage.addListener((message) => {
   if (message?.type === 'snapshots-changed') refreshSoon();
 });
 
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'local' || !changes[SETTINGS_KEY]) return;
+  const minutes = normalizeSettings(changes[SETTINGS_KEY].newValue).groupMinutes;
+  if (minutes === state.groupMinutes) return;
+  state.groupMinutes = minutes;
+  state.openGroups.clear();
+  render();
+});
+
 showView(viewFromHash(), { animate: false });
 initSettingsView({ onCleanup: refreshSoon });
 
-load()
+getSettings()
+  .then((settings) => {
+    state.groupMinutes = settings.groupMinutes;
+  })
+  .catch(console.error)
+  .then(() => load())
   .then(() => fadeIn($('list')))
   .catch((error) => {
     console.error(error);
