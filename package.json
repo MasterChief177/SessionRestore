@@ -1,0 +1,15 @@
+{
+  "name": "sessionrestore",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Chrome extension that keeps a running history of your tabs for crash recovery, with Markdown export.",
+  "license": "GPL-3.0-only",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "package": "sh scripts/package.sh"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Settings · SessionRestore</title>
+    <link rel="icon" href="../../icons/icon-32.png" />
+    <link rel="stylesheet" href="common.css" />
+    <link rel="stylesheet" href="options.css" />
+    <script type="module" src="options.js"></script>
+  </head>
+  <body>
+    <main class="settings">
+      <header class="settings-header">
+        <img src="../../icons/icon-48.png" alt="" width="30" height="30" />
+        <h1>SessionRestore settings</h1>
+      </header>
+
+      <form id="settings-form" novalidate>
+        <section class="card">
+          <h2>Recording</h2>
+          <label class="field">
+            <span class="field-label">Wait after the last tab change</span>
+            <span class="field-input"><input id="debounce" type="number" min="0.25" max="10" step="0.25" required /> seconds</span>
+            <span class="hint">Lower means less to lose after a crash; higher means fewer writes while you open or close lots of tabs.</span>
+          </label>
+          <label class="field">
+            <span class="field-label">Never record these URLs</span>
+            <textarea id="ignore-rules" rows="5" spellcheck="false"></textarea>
+            <span class="hint">
+              One rule per line. Plain text matches any URL containing it, <code>*</code> is a wildcard over the whole URL
+              (e.g. <code>https://*.bank.example/*</code>), lines starting with <code>#</code> are comments. Incognito windows are
+              never recorded.
+            </span>
+          </label>
+        </section>
+
+        <section class="card">
+          <h2>Retention</h2>
+          <p class="hint">Applies to automatic snapshots. Manual snapshots are never deleted automatically.</p>
+          <label class="field inline">
+            <span class="field-label">Keep every snapshot for</span>
+            <span class="field-input"><input id="keep-all-hours" type="number" min="1" max="720" step="1" required /> hours</span>
+          </label>
+          <label class="field inline">
+            <span class="field-label">Then keep one per hour for up to</span>
+            <span class="field-input"><input id="hourly-days" type="number" min="0" max="365" step="1" required /> days</span>
+          </label>
+          <label class="field inline">
+            <span class="field-label">Then keep one per day for up to</span>
+            <span class="field-input"><input id="daily-days" type="number" min="1" max="3650" step="1" required /> days</span>
+          </label>
+          <label class="field inline">
+            <span class="field-label">Never keep more than</span>
+            <span class="field-input"><input id="max-snapshots" type="number" min="100" max="100000" step="100" required /> automatic snapshots</span>
+          </label>
+          <p class="hint">The last snapshot before each browser restart is kept for as long as the daily tier allows.</p>
+        </section>
+
+        <section class="card">
+          <h2>Restore</h2>
+          <label class="check">
+            <input id="lazy-restore" type="checkbox" />
+            <span>
+              Load restored tabs lazily
+              <span class="hint">Only the active tab of each window loads right away; the others load when you click them.</span>
+            </span>
+          </label>
+        </section>
+
+        <div class="form-actions">
+          <button type="submit" class="primary">Save settings</button>
+          <button id="reset" type="button" class="ghost">Reset to defaults</button>
+          <span id="saved" class="muted" hidden>Saved</span>
+        </div>
+      </form>
+
+      <section class="card">
+        <h2>Storage</h2>
+        <p id="storage-stats" class="muted">&nbsp;</p>
+        <div class="row">
+          <button id="compact" type="button">Clean up now</button>
+          <button id="open-browser" type="button" class="ghost">Open snapshot browser</button>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
