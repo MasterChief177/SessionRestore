@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Snapshots · Tab Snapshot</title>
+    <link rel="icon" href="../../icons/icon-32.png" />
+    <link rel="stylesheet" href="common.css" />
+    <link rel="stylesheet" href="browser.css" />
+    <script type="module" src="browser.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <img src="../../icons/icon-48.png" alt="" width="30" height="30" />
+          <div>
+            <h1>Tab Snapshot</h1>
+            <p id="stats" class="muted">&nbsp;</p>
+          </div>
+        </div>
+        <form id="save-form" class="save-form">
+          <input id="label" type="text" placeholder="Label (optional)" maxlength="120" autocomplete="off" aria-label="Snapshot label" />
+          <button type="submit" class="primary">Save now</button>
+        </form>
+      </div>
+    </header>
+
+    <main class="page">
+      <div class="toolbar">
+        <div class="filters" role="group" aria-label="Show">
+          <button type="button" data-filter="all" aria-pressed="true">All</button>
+          <button type="button" data-filter="manual" aria-pressed="false">Manual</button>
+          <button type="button" data-filter="auto" aria-pressed="false">Automatic</button>
+        </div>
+        <div class="toolbar-actions">
+          <button id="import" type="button" title="Import a Markdown export, a JSON backup, or a plain list of links">Import…</button>
+          <input id="import-file" type="file" accept=".md,.markdown,.txt,.json,text/markdown,text/plain,application/json" multiple hidden />
+          <button id="export-md" type="button" title="Export the snapshots shown below as one Markdown file">Export .md</button>
+          <button id="export-json" type="button" title="Download every snapshot as a lossless JSON backup">Backup .json</button>
+          <button id="open-settings" type="button">Settings</button>
+        </div>
+      </div>
+
+      <div id="list" class="list"></div>
+      <p id="empty" class="empty muted" hidden>
+        No snapshots yet. They are recorded automatically whenever your tabs change, or press <strong>Save now</strong>.
+      </p>
+      <div class="load-more">
+        <button id="load-more" type="button" hidden>Load older snapshots</button>
+      </div>
+    </main>
+  </body>
+</html>
