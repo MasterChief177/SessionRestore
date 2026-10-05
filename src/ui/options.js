@@ -29,6 +29,9 @@ function read() {
 let savedTimer = null;
 function flashSaved() {
   $('saved').hidden = false;
+  $('saved').classList.remove('fade-in');
+  void $('saved').offsetWidth; // restart the fade on repeated saves
+  $('saved').classList.add('fade-in');
   clearTimeout(savedTimer);
   savedTimer = setTimeout(() => {
     $('saved').hidden = true;

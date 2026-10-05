@@ -1,23 +1,27 @@
 .settings {
   max-width: 680px;
   margin: 0 auto;
-  padding: 28px 20px 60px;
+  padding: 32px 24px 64px;
 }
 
 .settings-header {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
+}
+
+.settings-header img {
+  border-radius: 9px;
 }
 
 .settings-header h1 {
-  font-size: 19px;
+  font-size: 20px;
 }
 
 .card {
-  margin-bottom: 16px;
-  padding: 16px 18px;
+  margin-bottom: 18px;
+  padding: 20px 22px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
@@ -84,9 +88,10 @@ textarea {
 }
 
 code {
-  padding: 0 4px;
-  border-radius: 4px;
-  background: var(--surface-2);
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
   font-size: 12px;
 }
 
@@ -97,9 +102,44 @@ code {
   cursor: pointer;
 }
 
+/* Soft toggle switch */
 .check input {
-  margin-top: 3px;
-  accent-color: var(--accent);
+  appearance: none;
+  flex: none;
+  position: relative;
+  width: 38px;
+  height: 22px;
+  margin: 1px 0 0;
+  border-radius: 999px;
+  background: var(--border);
+  cursor: pointer;
+  transition: background-color 0.22s var(--ease);
+}
+
+.check input::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgb(74 50 30 / 0.25);
+  transition: transform 0.22s var(--ease);
+}
+
+.check input:checked {
+  background: var(--accent);
+}
+
+.check input:checked::after {
+  transform: translateX(16px);
+}
+
+.check input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ring);
 }
 
 .form-actions,
@@ -110,7 +150,12 @@ code {
 }
 
 .form-actions {
-  margin-bottom: 16px;
+  margin-bottom: 18px;
+}
+
+#saved {
+  color: var(--accent-strong);
+  font-weight: 600;
 }
 
 @media (max-width: 520px) {

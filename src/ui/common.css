@@ -1,21 +1,29 @@
+/* Coffee & cream theme: warm, soft surfaces, rounded corners, gentle motion. */
+
 :root {
   color-scheme: light dark;
-  --bg: #f6f7f8;
-  --surface: #ffffff;
-  --surface-2: #f0f2f3;
-  --border: #e1e4e7;
-  --text: #1c1f23;
-  --muted: #67707a;
-  --accent: #0f766e;
-  --accent-hover: #0c5f58;
-  --accent-text: #ffffff;
-  --accent-soft: #e3f3f1;
-  --danger: #c62828;
-  --danger-soft: #fdecec;
-  --focus: #14b8a6;
-  --radius: 10px;
-  --radius-sm: 7px;
-  --shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 1px 3px rgb(0 0 0 / 0.04);
+
+  --bg: #f8f3ed;
+  --surface: #fffdf9;
+  --surface-2: #f3eadf;
+  --border: #eadfd2;
+  --text: #3a2d24;
+  --muted: #7a6556;
+  --accent: #c19a76; /* café crème */
+  --accent-hover: #b48b66;
+  --accent-text: #2e2017;
+  --accent-strong: #855c3c;
+  --accent-soft: #f1e3d3;
+  --ring: rgb(193 154 118 / 0.45);
+  --danger: #b0473d;
+  --danger-soft: #f8e5e1;
+  --topbar-bg: rgb(248 243 237 / 0.82);
+
+  --radius: 16px;
+  --radius-sm: 11px;
+  --shadow: 0 1px 2px rgb(74 50 30 / 0.05), 0 6px 20px rgb(74 50 30 / 0.06);
+  --shadow-lift: 0 2px 4px rgb(74 50 30 / 0.07), 0 10px 28px rgb(74 50 30 / 0.1);
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 
   --group-grey: #5f6368;
   --group-blue: #1a73e8;
@@ -30,18 +38,23 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #15171a;
-    --surface: #1d2024;
-    --surface-2: #25292e;
-    --border: #33383e;
-    --text: #e7e9eb;
-    --muted: #9aa2ab;
-    --accent: #2dd4bf;
-    --accent-hover: #5eead4;
-    --accent-text: #08201d;
-    --accent-soft: #10302c;
-    --danger: #ef5350;
-    --danger-soft: #3a1d1d;
+    --bg: #1b1613;
+    --surface: #241e1a;
+    --surface-2: #2f2721;
+    --border: #3b3129;
+    --text: #f2e9df;
+    --muted: #b3a292;
+    --accent: #d2ad88;
+    --accent-hover: #ddbd9b;
+    --accent-text: #2a1c12;
+    --accent-strong: #e3c4a3;
+    --accent-soft: #3a2e25;
+    --ring: rgb(210 173 136 / 0.4);
+    --danger: #ec8f84;
+    --danger-soft: #3d2420;
+    --topbar-bg: rgb(27 22 19 / 0.8);
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.22);
+    --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.35), 0 12px 30px rgb(0 0 0 / 0.3);
 
     --group-grey: #bdc1c6;
     --group-blue: #8ab4f8;
@@ -60,9 +73,11 @@
 }
 
 html {
-  font: 14px/1.45 system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, sans-serif;
+  font: 14px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, sans-serif;
   background: var(--bg);
   color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  scrollbar-color: var(--border) transparent;
 }
 
 body {
@@ -75,10 +90,11 @@ h3 {
   margin: 0;
   font-weight: 600;
   line-height: 1.25;
+  letter-spacing: -0.01em;
 }
 
 a {
-  color: var(--accent);
+  color: var(--accent-strong);
 }
 
 [hidden] {
@@ -87,6 +103,10 @@ a {
 
 .muted {
   color: var(--muted);
+}
+
+::selection {
+  background: var(--accent-soft);
 }
 
 /* Buttons and inputs */
@@ -104,17 +124,26 @@ button {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 7px 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface);
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color 0.12s, border-color 0.12s;
+  transition:
+    background-color 0.18s var(--ease),
+    border-color 0.18s var(--ease),
+    color 0.18s var(--ease),
+    box-shadow 0.18s var(--ease),
+    transform 0.12s var(--ease);
 }
 
 button:hover {
   background: var(--surface-2);
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 button:disabled {
@@ -124,14 +153,15 @@ button:disabled {
 
 button.primary {
   background: var(--accent);
-  border-color: var(--accent);
+  border-color: transparent;
   color: var(--accent-text);
   font-weight: 600;
+  box-shadow: 0 1px 2px rgb(74 50 30 / 0.12);
 }
 
 button.primary:hover {
   background: var(--accent-hover);
-  border-color: var(--accent-hover);
+  box-shadow: 0 3px 10px rgb(74 50 30 / 0.16);
 }
 
 button.ghost {
@@ -147,20 +177,26 @@ button.danger {
   color: var(--danger);
 }
 
+button.danger:hover {
+  background: var(--danger-soft);
+  border-color: transparent;
+}
+
 button.danger.armed {
   background: var(--danger);
   border-color: var(--danger);
-  color: #fff;
+  color: var(--surface);
 }
 
 button.small {
-  padding: 3px 9px;
+  padding: 4px 11px;
   font-size: 12.5px;
 }
 
 button.icon {
-  padding: 6px;
+  padding: 7px;
   border-color: transparent;
+  border-radius: 50%;
   background: transparent;
 }
 
@@ -178,36 +214,53 @@ button svg,
 input[type='text'],
 input[type='number'],
 textarea {
-  padding: 6px 10px;
+  padding: 7px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface);
   min-width: 0;
+  transition:
+    border-color 0.18s var(--ease),
+    box-shadow 0.18s var(--ease);
 }
 
-:is(button, input, textarea, a):focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 1px;
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted);
+  opacity: 0.8;
+}
+
+input[type='text']:focus,
+input[type='number']:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+:is(button, a):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ring);
 }
 
 /* Kind badges */
 
 .kind {
   display: inline-block;
-  padding: 0 7px;
-  border: 1px solid var(--border);
+  padding: 1px 9px;
   border-radius: 999px;
   font-size: 11.5px;
   font-weight: 600;
   letter-spacing: 0.01em;
   background: var(--surface-2);
   color: var(--muted);
+  box-shadow: inset 0 0 0 1px var(--border);
 }
 
 .kind-manual {
-  border-color: transparent;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-strong);
+  box-shadow: none;
 }
 
 /* Tab group color dots */
@@ -235,26 +288,61 @@ textarea {
 .toast {
   position: fixed;
   left: 50%;
-  bottom: 18px;
-  transform: translate(-50%, 20px);
+  bottom: 20px;
+  transform: translate(-50%, 16px) scale(0.98);
   max-width: min(520px, calc(100vw - 32px));
-  padding: 9px 14px;
-  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  border-radius: 14px;
   background: var(--text);
   color: var(--bg);
-  box-shadow: 0 4px 16px rgb(0 0 0 / 0.18);
+  box-shadow: var(--shadow-lift);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.18s, transform 0.18s;
+  transition:
+    opacity 0.25s var(--ease),
+    transform 0.3s var(--ease);
   z-index: 10;
 }
 
 .toast.visible {
   opacity: 1;
-  transform: translate(-50%, 0);
+  transform: translate(-50%, 0) scale(1);
 }
 
 .toast.error {
   background: var(--danger);
-  color: #fff;
+  color: var(--surface);
+}
+
+/* Motion */
+
+@keyframes soft-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes soft-out {
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.fade-in {
+  animation: soft-in 0.32s var(--ease) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

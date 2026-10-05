@@ -44,6 +44,7 @@ async function renderLastSession() {
 async function renderRecent() {
   const { items } = await listSnapshots({ limit: RECENT_COUNT });
   $('recent-empty').hidden = items.length > 0;
+  $('recent').classList.add('fade-in');
   $('recent').replaceChildren(
     ...items.map((s) => {
       const seen = s.updatedAt ?? s.createdAt;

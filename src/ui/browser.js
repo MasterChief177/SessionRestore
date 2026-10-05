@@ -277,10 +277,42 @@ function renderDetails(snapshot) {
   return h('div', { class: 'snap-details' }, actions, windows);
 }
 
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+/** Restart the soft fade-in on an element. */
+function fadeIn(el) {
+  el.classList.remove('fade-in');
+  void el.offsetWidth; // force a reflow so the animation runs again
+  el.classList.add('fade-in');
+}
+
+/** Expand or collapse one row in place, so nothing else on the page jumps or re-renders. */
 function toggle(id) {
-  if (state.expanded.has(id)) state.expanded.delete(id);
-  else state.expanded.add(id);
-  render();
+  const article = $('list').querySelector(`.snap[data-id="${id}"]`);
+  const snapshot = state.items.find((s) => s.id === id);
+  if (!article || !snapshot) return;
+
+  const expanded = !state.expanded.has(id);
+  if (expanded) state.expanded.add(id);
+  else state.expanded.delete(id);
+  article.classList.toggle('expanded', expanded);
+  article.querySelector('.toggle').setAttribute('aria-expanded', String(expanded));
+
+  const current = article.querySelector('.snap-details');
+  if (expanded) {
+    current?.remove();
+    const details = renderDetails(snapshot);
+    details.classList.add('entering');
+    details.addEventListener('animationend', () => details.classList.remove('entering'), { once: true });
+    article.append(details);
+  } else if (current) {
+    if (reducedMotion.matches) {
+      current.remove();
+      return;
+    }
+    current.classList.add('leaving');
+    current.addEventListener('animationend', () => current.remove(), { once: true });
+  }
 }
 
 function renderItem(snapshot) {
@@ -339,7 +371,12 @@ function renderItem(snapshot) {
     ),
   );
 
-  return h('article', { class: 'snap', dataset: { id: snapshot.id } }, head, expanded ? renderDetails(snapshot) : null);
+  return h(
+    'article',
+    { class: expanded ? 'snap expanded' : 'snap', dataset: { id: snapshot.id } },
+    head,
+    expanded ? renderDetails(snapshot) : null,
+  );
 }
 
 function render() {
@@ -369,7 +406,9 @@ for (const button of document.querySelectorAll('[data-filter]')) {
       other.setAttribute('aria-pressed', String(other === button));
     }
     state.items = [];
-    load().catch(console.error);
+    load()
+      .then(() => fadeIn($('list')))
+      .catch(console.error);
   });
 }
 
@@ -402,8 +441,10 @@ chrome.runtime.onMessage.addListener((message) => {
   if (message?.type === 'snapshots-changed') refreshSoon();
 });
 
-load().catch((error) => {
-  console.error(error);
-  toast(error?.message ?? String(error), { error: true });
-});
+load()
+  .then(() => fadeIn($('list')))
+  .catch((error) => {
+    console.error(error);
+    toast(error?.message ?? String(error), { error: true });
+  });
 renderStats().catch(console.error);
