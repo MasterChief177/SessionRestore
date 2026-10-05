@@ -44,7 +44,7 @@ async function renderLastSession() {
   $('restore-last-session').onclick = (event) => restore(s.id, event.currentTarget);
 }
 
-/** One row per time window (same grouping as the main page); Restore brings back its last snapshot. */
+/** One row per time window, grouped like the main page. Single snapshots can be restored right here. */
 async function renderRecent() {
   const [{ items }, settings] = await Promise.all([listSnapshots({ limit: RECENT_SCAN }), getSettings()]);
   const groups = groupByWindow(items, settings.groupMinutes).slice(0, RECENT_COUNT);
@@ -71,31 +71,32 @@ async function renderRecent() {
           ),
           h('div', { class: 'recent-counts muted' }, `${describeCounts(s)} · ${formatRelative(s.updatedAt ?? s.createdAt)}`),
         ),
-        h(
-          'button',
-          {
-            type: 'button',
-            class: 'small',
-            title: single ? 'Restore into new windows' : `Restore the last snapshot in this window (${formatTime(s.createdAt)})`,
-            onclick: (event) => restore(s.id, event.currentTarget),
-          },
-          'Restore',
-        ),
+        // A window is never restored as a whole: "Show" opens it on the main page, unfolded.
+        single
+          ? h(
+              'button',
+              { type: 'button', class: 'small', title: 'Restore into new windows', onclick: (event) => restore(s.id, event.currentTarget) },
+              'Restore',
+            )
+          : h(
+              'button',
+              { type: 'button', class: 'small', title: 'See the snapshots in this window', onclick: () => openPage(`window-${group.mark}`) },
+              'Show',
+            ),
       );
     }),
   );
 }
 
-$('open-settings').append(icon('settings'));
-$('open-settings').addEventListener('click', async () => {
-  await openExtensionPage('src/ui/browser.html#settings');
+async function openPage(hash) {
+  await openExtensionPage(`src/ui/browser.html#${hash}`);
   window.close();
-});
+}
 
-$('open-browser').addEventListener('click', async () => {
-  await openExtensionPage('src/ui/browser.html#snapshots');
-  window.close();
-});
+// Both land on the Snapshots tab with the newest snapshot unfolded; Settings is the tab next to it.
+$('open-settings').append(icon('settings'));
+$('open-settings').addEventListener('click', () => openPage('latest'));
+$('open-browser').addEventListener('click', () => openPage('latest'));
 
 $('save-form').addEventListener('submit', async (event) => {
   event.preventDefault();

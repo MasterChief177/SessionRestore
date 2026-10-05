@@ -411,7 +411,7 @@ function renderItem(snapshot) {
   );
 }
 
-/** One row for a time window holding several snapshots. Restore brings back the last one. */
+/** One row for a time window holding several snapshots; unfold it to restore one of them. */
 function renderGroup(group) {
   const open = state.openGroups.has(group.mark);
   const latest = group.items[0];
@@ -440,20 +440,10 @@ function renderGroup(group) {
         : null,
       h('span', { class: 'muted' }, `${formatTimeRange(oldest.createdAt, latest.createdAt)} · last: ${describeCounts(latest)}`),
     ),
+    // No Restore here on purpose: you restore one of the snapshots inside, never the window.
     h(
       'div',
       { class: 'snap-actions' },
-      h(
-        'button',
-        {
-          type: 'button',
-          class: 'small',
-          title: `Restore the last snapshot in this window (${formatTime(latest.createdAt)})`,
-          onclick: (e) => restore(latest.id, {}, e.currentTarget),
-        },
-        icon('restore'),
-        'Restore',
-      ),
       h(
         'button',
         {
@@ -498,16 +488,50 @@ function render() {
 }
 
 // ---------------------------------------------------------------------------
-// Tabs: #snapshots and #settings. With no hash at all (Chrome's own "Extension options" menu
-// opens the page that way) the settings tab is shown.
+// Tabs and links into the page, all through the URL hash:
+//   #snapshots, #settings   pick a tab
+//   #latest                 Snapshots tab with the newest snapshot unfolded and its tabs listed
+//   #window-<mark>          Snapshots tab with that time window unfolded
+// With no hash at all (Chrome's own "Extension options" menu opens the page that way) the
+// settings tab is shown.
 
 const VIEWS = ['snapshots', 'settings'];
 const VIEW_TITLES = { snapshots: 'Snapshots', settings: 'Settings' };
 
-function viewFromHash() {
-  const view = location.hash.slice(1);
-  if (VIEWS.includes(view)) return view;
-  return location.hash ? 'snapshots' : 'settings';
+function parseHash() {
+  const raw = location.hash.slice(1);
+  if (!raw || raw === 'settings') return { view: 'settings' };
+  if (raw === 'latest') return { view: 'snapshots', reveal: 'latest' };
+  const windowLink = /^window-(\d+)$/.exec(raw);
+  if (windowLink) return { view: 'snapshots', reveal: Number(windowLink[1]) };
+  return { view: 'snapshots' };
+}
+
+function setFilter(name) {
+  state.filter = name;
+  for (const button of document.querySelectorAll('[data-filter]')) {
+    button.setAttribute('aria-pressed', String(button.dataset.filter === name));
+  }
+  state.items = [];
+}
+
+/** Unfold and scroll to the newest snapshot ('latest') or a time window (its mark). */
+async function reveal(target) {
+  if (state.filter !== 'all') setFilter('all');
+  await load();
+  const groups = groupByWindow(state.items, state.groupMinutes);
+  const group = target === 'latest' ? groups[0] : groups.find((g) => g.mark === target);
+  if (!group) return;
+  if (group.items.length > 1 && !state.openGroups.has(group.mark)) toggleGroup(group.mark);
+  let el;
+  if (target === 'latest') {
+    const latest = group.items[0];
+    if (!state.expanded.has(latest.id)) toggle(latest.id);
+    el = $('list').querySelector(`.snap[data-id="${latest.id}"]`);
+  } else {
+    el = $('list').querySelector(`.snap-group[data-mark="${group.mark}"]`);
+  }
+  el?.scrollIntoView({ block: 'nearest', behavior: reducedMotion.matches ? 'auto' : 'smooth' });
 }
 
 function showView(view, { animate = true } = {}) {
@@ -534,19 +558,21 @@ for (const tab of document.querySelectorAll('[role=tab]')) {
   });
 }
 
-// The popup's links reuse an open tab by changing just the hash.
-window.addEventListener('hashchange', () => showView(viewFromHash()));
+// The popup's links reuse an open tab by changing just the hash. `ready` is set below, once the
+// first load has finished.
+let ready = Promise.resolve();
+window.addEventListener('hashchange', () => {
+  const { view, reveal: target } = parseHash();
+  showView(view);
+  if (target != null) ready.then(() => reveal(target)).catch(console.error);
+});
 
 // ---------------------------------------------------------------------------
 // Wiring
 
 for (const button of document.querySelectorAll('[data-filter]')) {
   button.addEventListener('click', () => {
-    state.filter = button.dataset.filter;
-    for (const other of document.querySelectorAll('[data-filter]')) {
-      other.setAttribute('aria-pressed', String(other === button));
-    }
-    state.items = [];
+    setFilter(button.dataset.filter);
     load()
       .then(() => fadeIn($('list')))
       .catch(console.error);
@@ -590,16 +616,19 @@ chrome.storage.onChanged.addListener((changes, area) => {
   render();
 });
 
-showView(viewFromHash(), { animate: false });
+const initial = parseHash();
+showView(initial.view, { animate: false });
 initSettingsView({ onCleanup: refreshSoon });
 
-getSettings()
+ready = getSettings()
   .then((settings) => {
     state.groupMinutes = settings.groupMinutes;
   })
   .catch(console.error)
   .then(() => load())
-  .then(() => fadeIn($('list')))
+  .then(() => fadeIn($('list')));
+ready
+  .then(() => initial.reveal != null && reveal(initial.reveal))
   .catch((error) => {
     console.error(error);
     toast(error?.message ?? String(error), { error: true });
