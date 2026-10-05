@@ -1,6 +1,8 @@
+// The Settings tab of the main page.
+
 import { countSnapshots, getSnapshotIndex } from '../background/db.js';
 import { getSettings, resetSettings, saveSettings } from '../lib/settings.js';
-import { busy, formatBytes, openExtensionPage, plural, send, toast } from './common.js';
+import { busy, formatBytes, plural, send, toast } from './common.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -38,7 +40,7 @@ function flashSaved() {
   }, 2000);
 }
 
-async function renderStorage() {
+export async function renderStorage() {
   const [entries, total, estimate] = await Promise.all([
     getSnapshotIndex(),
     countSnapshots(),
@@ -49,32 +51,34 @@ async function renderStorage() {
   $('storage-stats').textContent = `${plural(total, 'snapshot')} (${manual} manual)${size}`;
 }
 
-$('settings-form').addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const button = event.submitter ?? event.currentTarget.querySelector('button[type=submit]');
-  await busy(button, async () => {
-    // normalizeSettings clamps anything out of range; show the values that were actually saved.
-    fill(await saveSettings(read()));
-    flashSaved();
+/** Wire up the form once. `onCleanup` runs after "Clean up now" deleted something. */
+export function initSettingsView({ onCleanup = () => {} } = {}) {
+  $('settings-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const button = event.submitter ?? event.currentTarget.querySelector('button[type=submit]');
+    await busy(button, async () => {
+      // normalizeSettings clamps anything out of range; show the values that were actually saved.
+      fill(await saveSettings(read()));
+      flashSaved();
+    });
   });
-});
 
-$('reset').addEventListener('click', (e) =>
-  busy(e.currentTarget, async () => {
-    fill(await resetSettings());
-    flashSaved();
-  }),
-);
+  $('reset').addEventListener('click', (e) =>
+    busy(e.currentTarget, async () => {
+      fill(await resetSettings());
+      flashSaved();
+    }),
+  );
 
-$('compact').addEventListener('click', (e) =>
-  busy(e.currentTarget, async () => {
-    const result = await send('compact');
-    toast(result?.deleted ? `Deleted ${plural(result.deleted, 'old snapshot')}` : 'Nothing to clean up');
-    await renderStorage();
-  }),
-);
+  $('compact').addEventListener('click', (e) =>
+    busy(e.currentTarget, async () => {
+      const result = await send('compact');
+      toast(result?.deleted ? `Deleted ${plural(result.deleted, 'old snapshot')}` : 'Nothing to clean up');
+      await renderStorage();
+      if (result?.deleted) onCleanup();
+    }),
+  );
 
-$('open-browser').addEventListener('click', () => openExtensionPage('src/ui/browser.html'));
-
-getSettings().then(fill, (error) => toast(error.message, { error: true }));
-renderStorage().catch(console.error);
+  getSettings().then(fill, (error) => toast(error.message, { error: true }));
+  renderStorage().catch(console.error);
+}

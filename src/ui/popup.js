@@ -79,13 +79,13 @@ async function renderRecent() {
 }
 
 $('open-settings').append(icon('settings'));
-$('open-settings').addEventListener('click', () => {
-  chrome.runtime.openOptionsPage();
+$('open-settings').addEventListener('click', async () => {
+  await openExtensionPage('src/ui/browser.html#settings');
   window.close();
 });
 
 $('open-browser').addEventListener('click', async () => {
-  await openExtensionPage('src/ui/browser.html');
+  await openExtensionPage('src/ui/browser.html#snapshots');
   window.close();
 });
 

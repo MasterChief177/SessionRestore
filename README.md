@@ -30,8 +30,9 @@ Works in Chrome 110+ and other Chromium browsers (Edge, Brave, Vivaldi).
 ## Using it
 
 - **Popup:** current tab count, **Save now**, **Restore last session** (only shown after a restart, and only when something is missing), and the most recent snapshots.
-- **Snapshot browser** (via the popup link): every snapshot by day, with filters for manual and automatic ones. Click a row to see its windows and tabs; click a tab to open just that one.
-- **Settings:** right-click the toolbar icon → *Options*, or the gear in the popup.
+- **Main page**, with two tabs you can switch between:
+  - **Snapshots** (the popup's *All snapshots* link): every snapshot by day, with filters for manual and automatic ones. Click a row to see its windows and tabs; click a tab to open just that one.
+  - **Settings** (the gear in the popup, or right-click the toolbar icon → *Options*).
 
 ## How it works
 
@@ -112,7 +113,7 @@ src/
 │   ├── restore.js          batched, lazy restore
 │   ├── settings.js         defaults and validation
 │   └── ignore.js           URL ignore rules
-└── ui/                     popup, snapshot browser, settings page
+└── ui/                     popup, main page (Snapshots + Settings tabs)
 icons/                      icon.svg is the source for the PNGs
 test/                       unit tests for the pure modules
 ```

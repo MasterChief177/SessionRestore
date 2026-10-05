@@ -21,7 +21,7 @@
     }
   },
   "options_ui": {
-    "page": "src/ui/options.html",
+    "page": "src/ui/browser.html",
     "open_in_tab": true
   },
   "icons": {

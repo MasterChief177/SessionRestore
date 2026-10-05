@@ -9,6 +9,7 @@ import {
 } from '../background/db.js';
 import { prepareImport, snapshotsToJson } from '../lib/backup.js';
 import { snapshotToMarkdown, snapshotsToMarkdown } from '../lib/markdown.js';
+import { initSettingsView, renderStorage } from './settings-view.js';
 import {
   busy,
   confirmClick,
@@ -74,6 +75,7 @@ function refreshSoon() {
   refreshTimer = setTimeout(() => {
     load().catch(console.error);
     renderStats().catch(console.error);
+    if (!$('view-settings').hidden) renderStorage().catch(console.error);
   }, 400);
 }
 
@@ -397,6 +399,46 @@ function render() {
 }
 
 // ---------------------------------------------------------------------------
+// Tabs: #snapshots and #settings. With no hash at all (Chrome's own "Extension options" menu
+// opens the page that way) the settings tab is shown.
+
+const VIEWS = ['snapshots', 'settings'];
+const VIEW_TITLES = { snapshots: 'Snapshots', settings: 'Settings' };
+
+function viewFromHash() {
+  const view = location.hash.slice(1);
+  if (VIEWS.includes(view)) return view;
+  return location.hash ? 'snapshots' : 'settings';
+}
+
+function showView(view, { animate = true } = {}) {
+  for (const name of VIEWS) {
+    const active = name === view;
+    $(`view-${name}`).hidden = !active;
+    $(`tab-${name}`).setAttribute('aria-selected', String(active));
+    $(`tab-${name}`).tabIndex = active ? 0 : -1;
+  }
+  document.title = `${VIEW_TITLES[view]} · SessionRestore`;
+  if (location.hash !== `#${view}`) history.replaceState(null, '', `#${view}`);
+  if (animate) fadeIn($(`view-${view}`));
+  if (view === 'settings') renderStorage().catch(console.error);
+}
+
+for (const tab of document.querySelectorAll('[role=tab]')) {
+  tab.addEventListener('click', () => showView(tab.dataset.view));
+  tab.addEventListener('keydown', (event) => {
+    const step = { ArrowLeft: -1, ArrowRight: 1 }[event.key];
+    if (!step) return;
+    const next = VIEWS[(VIEWS.indexOf(tab.dataset.view) + step + VIEWS.length) % VIEWS.length];
+    showView(next);
+    $(`tab-${next}`).focus();
+  });
+}
+
+// The popup's links reuse an open tab by changing just the hash.
+window.addEventListener('hashchange', () => showView(viewFromHash()));
+
+// ---------------------------------------------------------------------------
 // Wiring
 
 for (const button of document.querySelectorAll('[data-filter]')) {
@@ -435,11 +477,13 @@ $('import-file').addEventListener('change', async (event) => {
 
 $('export-md').addEventListener('click', (e) => exportAllMarkdown(e.currentTarget));
 $('export-json').addEventListener('click', (e) => exportBackup(e.currentTarget));
-$('open-settings').addEventListener('click', () => chrome.runtime.openOptionsPage());
 
 chrome.runtime.onMessage.addListener((message) => {
   if (message?.type === 'snapshots-changed') refreshSoon();
 });
+
+showView(viewFromHash(), { animate: false });
+initSettingsView({ onCleanup: refreshSoon });
 
 load()
   .then(() => fadeIn($('list')))

@@ -190,13 +190,17 @@ export async function busy(button, action) {
   }
 }
 
-/** Open (or focus, if already open) one of the extension's own pages. */
+/**
+ * Open one of the extension's own pages, or focus it if it's already open. A `#hash` in `path`
+ * picks the tab on the main page; an open copy just gets its hash changed instead of reloading.
+ */
 export async function openExtensionPage(path) {
   const url = chrome.runtime.getURL(path);
+  const page = url.split('#')[0];
   // chrome-extension:// isn't a valid match pattern for tabs.query({ url }), so filter by hand.
-  const existing = (await chrome.tabs.query({})).find((tab) => tab.url?.split('#')[0] === url);
+  const existing = (await chrome.tabs.query({})).find((tab) => tab.url?.split('#')[0] === page);
   if (existing) {
-    await chrome.tabs.update(existing.id, { active: true });
+    await chrome.tabs.update(existing.id, existing.url === url ? { active: true } : { active: true, url });
     await chrome.windows.update(existing.windowId, { focused: true });
   } else {
     await chrome.tabs.create({ url });
