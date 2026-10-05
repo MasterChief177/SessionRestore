@@ -1,10 +1,8 @@
-# Tab Snapshot
+# SessionRestore
 
 A Chrome extension that keeps a running history of your open tabs, so you can get them back after a crash, and exports any snapshot as a readable Markdown file.
 
 > **Note:** This project was written with AI and built for a small group of friends. It was never intended for wide adoption. I may not maintain it if it takes up too much of my time. Issues and PRs are welcome, but there's no guarantee I'll respond. Feel free to fork it.
-
-*Tab Snapshot is a working title.*
 
 ## What it does
 
@@ -62,7 +60,7 @@ Manual snapshots, the newest snapshot, and the final snapshot of each browser se
 ## Markdown format
 
 ```markdown
-# Tab Snapshot: 2026-10-05 14:32
+# SessionRestore: 2026-10-05 14:32
 
 Kind: manual | Label: Research session | Tabs: 42 | Windows: 2
 
@@ -95,7 +93,7 @@ No build step and no runtime dependencies: plain JavaScript modules, loaded dire
 
 ```sh
 npm test          # unit tests (Node 20+, built-in test runner)
-npm run package   # dist/tab-snapshot-<version>.zip for the Chrome Web Store
+npm run package   # dist/sessionrestore-<version>.zip for the Chrome Web Store
 ```
 
 ```

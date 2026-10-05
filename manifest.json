@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Tab Snapshot",
-  "short_name": "Tab Snapshot",
+  "name": "SessionRestore",
+  "short_name": "SessionRestore",
   "version": "0.1.0",
   "description": "Keeps a running history of your open tabs so you can get them back after a crash. Export any snapshot as Markdown.",
   "minimum_chrome_version": "110",
@@ -12,7 +12,7 @@
     "type": "module"
   },
   "action": {
-    "default_title": "Tab Snapshot",
+    "default_title": "SessionRestore",
     "default_popup": "src/ui/popup.html",
     "default_icon": {
       "16": "icons/icon-16.png",

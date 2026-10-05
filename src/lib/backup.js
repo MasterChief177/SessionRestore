@@ -3,7 +3,7 @@
 import { KINDS, makeSnapshot, sanitizeWindows } from './model.js';
 import { parseMarkdown } from './markdown.js';
 
-export const BACKUP_FORMAT = 'tab-snapshot';
+export const BACKUP_FORMAT = 'sessionrestore';
 export const BACKUP_VERSION = 1;
 
 export function snapshotsToJson(snapshots, now = Date.now()) {
@@ -26,7 +26,7 @@ export function parseJsonBackup(text) {
   if (Array.isArray(data)) list = data;
   else if (Array.isArray(data?.snapshots)) list = data.snapshots;
   else if (Array.isArray(data?.windows)) list = [data];
-  if (!list) throw new Error('This JSON file is not a Tab Snapshot backup.');
+  if (!list) throw new Error('This JSON file is not a SessionRestore backup.');
 
   return list
     .map((raw) => ({

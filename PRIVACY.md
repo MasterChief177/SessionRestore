@@ -2,7 +2,7 @@
 
 *Last updated: 5 October 2026*
 
-Tab Snapshot is a browser extension that keeps a history of your open tabs so you can restore them after a crash.
+SessionRestore is a browser extension that keeps a history of your open tabs so you can restore them after a crash.
 
 ## What it records
 

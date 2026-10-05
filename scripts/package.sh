@@ -5,7 +5,7 @@ set -eu
 
 cd "$(dirname "$0")/.."
 version=$(node -p "require('./manifest.json').version")
-out="dist/tab-snapshot-$version.zip"
+out="dist/sessionrestore-$version.zip"
 
 mkdir -p dist
 rm -f "$out"

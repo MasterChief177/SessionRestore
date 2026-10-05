@@ -1,5 +1,5 @@
 {
-  "name": "tab-snapshot",
+  "name": "sessionrestore",
   "version": "0.1.0",
   "private": true,
   "description": "Chrome extension that keeps a running history of your tabs for crash recovery, with Markdown export.",

@@ -61,5 +61,5 @@ test('a Markdown file that starts with a link is not mistaken for JSON', async (
 });
 
 test('invalid JSON backups are rejected', () => {
-  assert.throws(() => parseJsonBackup('{"hello": 1}'), /not a Tab Snapshot backup/);
+  assert.throws(() => parseJsonBackup('{"hello": 1}'), /not a SessionRestore backup/);
 });

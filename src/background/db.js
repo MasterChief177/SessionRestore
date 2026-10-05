@@ -1,7 +1,7 @@
 // IndexedDB wrapper for snapshots. Works from the service worker and from extension pages
 // (they share the extension origin, so they see the same database).
 
-const DB_NAME = 'tab-snapshot';
+const DB_NAME = 'sessionrestore';
 const DB_VERSION = 1;
 const STORE = 'snapshots';
 

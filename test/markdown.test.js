@@ -32,15 +32,17 @@ function sampleWindows() {
 
 test('formatStamp / parseStamp round trip at minute precision', () => {
   assert.equal(formatStamp(createdAt), '2026-10-05 14:32');
-  assert.equal(parseStamp('Tab Snapshot: 2026-10-05 14:32'), createdAt);
+  assert.equal(parseStamp('SessionRestore: 2026-10-05 14:32'), createdAt);
   assert.equal(parseStamp('no date here'), null);
+  // Exports made under the old working title still carry their time.
+  assert.equal(parseStamp('Tab Snapshot: 2026-10-05 14:32'), createdAt);
 });
 
 test('export matches the documented format', async () => {
   const snap = await makeSnapshot({ windows: sampleWindows(), kind: 'manual', label: 'Research session', createdAt });
   const md = snapshotToMarkdown(snap);
   const lines = md.split('\n');
-  assert.equal(lines[0], '# Tab Snapshot: 2026-10-05 14:32');
+  assert.equal(lines[0], '# SessionRestore: 2026-10-05 14:32');
   assert.equal(lines[2], 'Kind: manual | Label: Research session | Tabs: 6 | Windows: 2');
   assert.ok(md.includes('## Window 1 (focused)\n\n### Ungrouped\n- 📌 [Gmail](https://mail.google.com/)\n\n### Group: Docs (blue)\n'));
   assert.ok(md.includes('- [Chrome tabs API](https://developer.chrome.com/docs/extensions/reference/api/tabs)'));

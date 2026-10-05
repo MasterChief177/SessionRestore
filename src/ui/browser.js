@@ -95,11 +95,11 @@ async function restore(id, target = {}, button = null) {
 }
 
 function exportMarkdown(snapshot) {
-  downloadFile(`tab-snapshot-${fileStamp(snapshot.createdAt)}.md`, snapshotToMarkdown(snapshot), 'text/markdown');
+  downloadFile(`sessionrestore-${fileStamp(snapshot.createdAt)}.md`, snapshotToMarkdown(snapshot), 'text/markdown');
 }
 
 function exportJson(snapshot) {
-  downloadFile(`tab-snapshot-${fileStamp(snapshot.createdAt)}.json`, snapshotsToJson([snapshot]), 'application/json');
+  downloadFile(`sessionrestore-${fileStamp(snapshot.createdAt)}.json`, snapshotsToJson([snapshot]), 'application/json');
 }
 
 async function copyMarkdown(snapshot, button) {
@@ -140,7 +140,7 @@ async function exportAllMarkdown(button) {
     const all = (await getAllSnapshots()).filter((s) => !kinds || kinds.includes(s.kind)).reverse();
     if (!all.length) return toast('Nothing to export');
     const name = state.filter === 'all' ? 'all' : state.filter;
-    downloadFile(`tab-snapshots-${name}-${fileStamp(Date.now())}.md`, snapshotsToMarkdown(all), 'text/markdown');
+    downloadFile(`sessionrestore-${name}-${fileStamp(Date.now())}.md`, snapshotsToMarkdown(all), 'text/markdown');
   });
 }
 
@@ -148,7 +148,7 @@ async function exportBackup(button) {
   await busy(button, async () => {
     const all = await getAllSnapshots();
     if (!all.length) return toast('Nothing to back up');
-    downloadFile(`tab-snapshot-backup-${fileStamp(Date.now())}.json`, snapshotsToJson(all), 'application/json');
+    downloadFile(`sessionrestore-backup-${fileStamp(Date.now())}.json`, snapshotsToJson(all), 'application/json');
   });
 }
 

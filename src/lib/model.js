@@ -1,7 +1,7 @@
 // Snapshot data model helpers shared by the service worker, import/export and the UI.
 // Nothing in here touches chrome.* so it can be unit tested in Node.
 
-export const APP_NAME = 'Tab Snapshot';
+export const APP_NAME = 'SessionRestore';
 
 export const KINDS = ['auto', 'manual', 'startup'];
 

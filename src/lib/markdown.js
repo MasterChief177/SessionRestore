@@ -2,7 +2,7 @@
 //
 // Export format (human-readable first, machine-parsable second):
 //
-//   # Tab Snapshot: 2026-10-05 14:32
+//   # SessionRestore: 2026-10-05 14:32
 //
 //   Kind: manual | Label: Research session | Tabs: 42 | Windows: 2
 //
