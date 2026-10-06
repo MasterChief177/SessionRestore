@@ -118,3 +118,12 @@ test('settings are clamped and defaulted', () => {
   // An emptied form field means "use the default", not "use the minimum".
   assert.equal(normalizeSettings({ debounceMs: '', maxSnapshots: '' }).debounceMs, DEFAULT_SETTINGS.debounceMs);
 });
+
+test('retention mode falls back to smart thinning and its numbers are clamped', () => {
+  assert.equal(normalizeSettings({ retentionMode: 'bogus' }).retentionMode, 'thin');
+  const s = normalizeSettings({ retentionMode: 'everything', everythingDays: 0, everythingMax: 1e9 });
+  assert.equal(s.retentionMode, 'everything');
+  assert.equal(s.everythingDays, 1);
+  assert.equal(s.everythingMax, 100_000);
+  assert.equal(normalizeSettings({ everythingMax: '' }).everythingMax, DEFAULT_SETTINGS.everythingMax);
+});

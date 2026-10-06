@@ -5,6 +5,23 @@ import { getSettings, resetSettings, saveSettings } from '../lib/settings.js';
 import { busy, formatBytes, plural, send, toast } from './common.js';
 
 const $ = (id) => document.getElementById(id);
+const modes = () => document.querySelectorAll('.mode');
+const sentenceInputs = () => document.querySelectorAll('.sentence .num');
+
+function setMode(mode) {
+  for (const el of modes()) {
+    const active = el.dataset.mode === mode;
+    el.classList.toggle('active', active);
+    el.querySelector('input[type=radio]').checked = active;
+  }
+}
+
+// Numbers inside a sentence grow with their content, and the unit after them follows (1 day, 2 days).
+function fitSentenceInput(input) {
+  input.style.setProperty('--digits', Math.max(input.value.length, 1));
+  const unit = input.nextElementSibling;
+  if (unit?.classList.contains('unit')) unit.textContent = input.value === '1' ? unit.dataset.one : unit.dataset.many;
+}
 
 function fill(settings) {
   $('debounce').value = settings.debounceMs / 1000;
@@ -12,7 +29,10 @@ function fill(settings) {
   $('keep-all-hours').value = settings.keepAllHours;
   $('hourly-days').value = settings.hourlyDays;
   $('daily-days').value = settings.dailyDays;
-  $('max-snapshots').value = settings.maxSnapshots;
+  $('everything-days').value = settings.everythingDays;
+  $('everything-max').value = settings.everythingMax;
+  setMode(settings.retentionMode);
+  sentenceInputs().forEach(fitSentenceInput);
   $('lazy-restore').checked = settings.lazyRestore;
   $('group-minutes').value = settings.groupMinutes;
 }
@@ -24,7 +44,9 @@ function read() {
     keepAllHours: $('keep-all-hours').value,
     hourlyDays: $('hourly-days').value,
     dailyDays: $('daily-days').value,
-    maxSnapshots: $('max-snapshots').value,
+    retentionMode: document.querySelector('input[name=retention-mode]:checked')?.value,
+    everythingDays: $('everything-days').value,
+    everythingMax: $('everything-max').value,
     lazyRestore: $('lazy-restore').checked,
     groupMinutes: $('group-minutes').value,
   };
@@ -55,6 +77,14 @@ export async function renderStorage() {
 
 /** Wire up the form once. `onCleanup` runs after "Clean up now" deleted something. */
 export function initSettingsView({ onCleanup = () => {} } = {}) {
+  // Clicking anywhere in a mode (its sentence and numbers included) selects it; keyboard users
+  // move between the radios with the arrow keys.
+  for (const el of modes()) {
+    el.addEventListener('click', () => setMode(el.dataset.mode));
+    el.querySelector('input[type=radio]').addEventListener('change', () => setMode(el.dataset.mode));
+  }
+  for (const input of sentenceInputs()) input.addEventListener('input', () => fitSentenceInput(input));
+
   $('settings-form').addEventListener('submit', async (event) => {
     event.preventDefault();
     const button = event.submitter ?? event.currentTarget.querySelector('button[type=submit]');

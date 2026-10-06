@@ -80,8 +80,11 @@ html {
   scrollbar-color: var(--border) transparent;
 }
 
+/* Chrome injects `body { font-size: 75%; font-family: <platform font> }` into extension pages;
+   take the font from html instead so 14px system-ui is the real base everywhere. */
 body {
   margin: 0;
+  font: inherit;
 }
 
 h1,

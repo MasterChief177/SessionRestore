@@ -112,14 +112,19 @@ Snapshot {
 
 ## 7. Retention and compaction
 
-Defaults (all configurable):
+Two modes, each shown in Settings as one sentence with editable numbers.
+
+Smart thinning (default, all configurable):
 
 - Last 24 h: keep every snapshot
 - 1-7 days: keep one per hour
 - 7-90 days: keep one per day
 - Older: delete
-- **Manual snapshots are never auto-deleted**
 - Hard cap on total snapshots as a safety net
+
+Keep everything: keep all automatic snapshots for 30 days, but never more than 2000; the oldest go first.
+
+In both: **manual snapshots are never auto-deleted**, and neither is the newest snapshot.
 
 Run compaction on startup and at most once per hour.
 
@@ -230,6 +235,5 @@ No host permissions, no remote code, no network requests.
 
 - Final project name
 - Chrome only, or Firefox later?
-- Is a simple retention preset enough, or do I want per-tier settings in the UI?
 - Should import accept only my own Markdown format, or also OneTab / Session Buddy exports?
 - Include a keyboard shortcut for "save now"?

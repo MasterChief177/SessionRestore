@@ -63,3 +63,29 @@ test('hard cap trims the oldest automatic snapshots only', () => {
   const doomed = planCompaction([...autos, manual], settings, now);
   assert.deepEqual(doomed.sort(), autos.slice(3).map((e) => e.id).sort());
 });
+
+test('keep-everything mode keeps every automatic snapshot younger than everythingDays', () => {
+  const settings = { ...DEFAULT_SETTINGS, retentionMode: 'everything', everythingDays: 30 };
+  // Same clock hour five days ago: smart thinning would keep only one of these.
+  const sameHour = [entry(5 * DAY + 10 * MIN), entry(5 * DAY + 20 * MIN), entry(5 * DAY + 30 * MIN)];
+  const tooOld = entry(31 * DAY);
+  const manual = entry(400 * DAY, 'manual');
+  const latest = entry(1 * MIN);
+  const doomed = planCompaction([...sameHour, tooOld, manual, latest], settings, now);
+  assert.deepEqual(doomed, [tooOld.id]);
+});
+
+test('keep-everything mode drops the oldest once the limit is reached', () => {
+  const settings = { ...DEFAULT_SETTINGS, retentionMode: 'everything', everythingMax: 3 };
+  const autos = Array.from({ length: 5 }, (_, i) => entry((i + 1) * HOUR));
+  const manual = entry(10 * HOUR, 'manual');
+  const doomed = planCompaction([...autos, manual], settings, now);
+  assert.deepEqual(doomed.sort(), autos.slice(3).map((e) => e.id).sort());
+});
+
+test('keep-everything mode never deletes the latest snapshot, even when ancient', () => {
+  const settings = { ...DEFAULT_SETTINGS, retentionMode: 'everything', everythingDays: 30 };
+  const latest = entry(200 * DAY);
+  const older = entry(201 * DAY);
+  assert.deepEqual(planCompaction([older, latest], settings, now), [older.id]);
+});
