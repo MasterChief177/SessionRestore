@@ -176,7 +176,6 @@ code {
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  font-size: 14.5px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -212,7 +211,6 @@ code {
 
 .sentence {
   margin: 6px 0 0 27px;
-  font-size: 14.5px;
   line-height: 2.1;
   transition: opacity 0.18s var(--ease);
 }

@@ -1,6 +1,7 @@
 body {
   width: 360px;
   background: var(--bg);
+  font-size: 13px; /* a touch tighter than the 14px pages, so a snapshot row fits on one line */
 }
 
 .popup-header {
