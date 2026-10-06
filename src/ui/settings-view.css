@@ -51,13 +51,6 @@
   color: var(--text);
 }
 
-textarea {
-  width: 100%;
-  resize: vertical;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 13px;
-}
-
 .hint {
   display: block;
   margin: 0;
@@ -142,6 +135,118 @@ code {
 #saved {
   color: var(--accent-strong);
   font-weight: 600;
+}
+
+/* Never record these URLs: one row per rule, each editable in place */
+
+.rules {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.rule {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px 4px 4px;
+  transition: background-color 0.18s var(--ease);
+}
+
+.rule + .rule {
+  border-top: 1px solid var(--border);
+}
+
+.rule:first-child {
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.rule:last-child {
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+}
+
+.rule:only-child {
+  border-radius: var(--radius-sm);
+}
+
+.rule:hover,
+.rule:focus-within {
+  background: var(--surface-2);
+}
+
+.rule .rule-text {
+  padding: 5px 9px;
+  border-color: transparent;
+  border-radius: 8px;
+  background: transparent;
+}
+
+.rule .rule-text:hover {
+  border-color: var(--border);
+}
+
+.rule .rule-text:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: none;
+}
+
+.rule.comment .rule-text {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.rule-kind {
+  font-weight: 500;
+  cursor: help;
+}
+
+.rule-kind.kind-pattern {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  box-shadow: none;
+}
+
+.rule .rule-remove {
+  padding: 6px;
+  color: var(--muted);
+}
+
+.rule .rule-remove:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.rule.flash {
+  animation: rule-flash 1.2s var(--ease);
+}
+
+@keyframes rule-flash {
+  from,
+  40% {
+    background: var(--accent-soft);
+  }
+}
+
+.rules-empty {
+  margin: 0;
+  padding: 9px 13px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+
+.rule-add {
+  display: flex;
+  gap: 8px;
+  margin-top: 3px;
+}
+
+.rule-add input {
+  flex: 1;
 }
 
 /* Retention: two modes, each a sentence with its numbers typed inline */

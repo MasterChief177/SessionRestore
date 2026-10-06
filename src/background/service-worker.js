@@ -3,20 +3,18 @@
 //
 // MV3 rules this follows:
 // - The worker can be killed at any time, so nothing important lives in memory. The debounce
-//   timer is the only in-memory state; losing it just means the next event re-arms it.
+//   timer is the only in-memory state, and long waits back it up with an alarm (see below).
 // - A short setTimeout is fine because the triggering events keep the worker alive.
 // - Every listener is registered synchronously at the top level.
 
 import { DEFAULT_SETTINGS, SETTINGS_KEY, getSettings, normalizeSettings } from '../lib/settings.js';
+import { snapshotDelay } from '../lib/debounce.js';
 import { makeSnapshot, summarize } from '../lib/model.js';
 import { restoreSnapshot } from '../lib/restore.js';
 import { captureWindows } from './snapshot.js';
 import { maybeCompact } from './compaction.js';
 import { getSessionInfo } from './session.js';
 import * as db from './db.js';
-
-// If events never stop (a page retitling itself every second), still write at least this often.
-const MAX_WAIT_MS = 10_000;
 
 // ---------------------------------------------------------------------------
 // Serialized work queue: snapshot writes and compaction never overlap, so the
@@ -31,13 +29,23 @@ function enqueue(task) {
 
 // ---------------------------------------------------------------------------
 // Debounce
+//
+// Chrome stops a worker after about 30 idle seconds and its timers go with it, so with a debounce
+// longer than ALARM_AFTER_MS every wait also arms an alarm that wakes the worker up to write the
+// snapshot. The alarm name carries the snapshot kind, because pendingKind doesn't survive the worker.
+
+const ALARMS = { auto: 'snapshot', startup: 'startup-snapshot' };
+const ALARM_AFTER_MS = 20_000;
+const MAX_TIMEOUT_MS = 2 ** 31 - 1; // setTimeout fires at once for anything longer
 
 let debounceMs = DEFAULT_SETTINGS.debounceMs;
+let pending = false;
 let timer = null;
 let firstEventAt = 0;
 let pendingKind = 'auto';
 
-getSettings().then(
+// A freshly woken worker must not debounce its first event with the default delay.
+const settingsLoaded = getSettings().then(
   (settings) => {
     debounceMs = settings.debounceMs;
   },
@@ -45,20 +53,34 @@ getSettings().then(
 );
 
 function scheduleSnapshot(kind = 'auto') {
-  if (kind === 'startup') pendingKind = 'startup';
-  const now = Date.now();
-  if (timer === null) firstEventAt = now;
-  else clearTimeout(timer);
-  const delay = Math.max(0, Math.min(debounceMs, firstEventAt + MAX_WAIT_MS - now));
-  timer = setTimeout(flush, delay);
+  settingsLoaded.then(() => {
+    if (kind === 'startup') pendingKind = 'startup';
+    const now = Date.now();
+    if (!pending) firstEventAt = now;
+    pending = true;
+    clearTimeout(timer);
+    const delay = snapshotDelay(debounceMs, firstEventAt, now);
+    timer = delay <= MAX_TIMEOUT_MS ? setTimeout(flush, delay) : null;
+    if (debounceMs > ALARM_AFTER_MS) {
+      if (pendingKind === 'startup') chrome.alarms.clear(ALARMS.auto);
+      chrome.alarms.create(ALARMS[pendingKind], { when: now + delay });
+    }
+  });
 }
 
-function flush() {
-  const kind = pendingKind;
+function flush(kind = pendingKind) {
+  clearTimeout(timer);
   timer = null;
+  pending = false;
   pendingKind = 'auto';
+  chrome.alarms.clearAll();
   enqueue(() => recordSnapshot({ kind })).catch((error) => console.error('Snapshot failed', error));
 }
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === ALARMS.startup) flush('startup');
+  else if (alarm.name === ALARMS.auto) flush();
+});
 
 // ---------------------------------------------------------------------------
 // Recording

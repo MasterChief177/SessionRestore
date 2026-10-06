@@ -2,9 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { normalizeChromeWindows } from '../src/background/snapshot.js';
-import { compileIgnoreRules } from '../src/lib/ignore.js';
+import { compileIgnoreRules, ruleKey, ruleKind } from '../src/lib/ignore.js';
 import { computeHashes, makeSnapshot, sanitizeWindows } from '../src/lib/model.js';
-import { normalizeSettings, DEFAULT_SETTINGS } from '../src/lib/settings.js';
+import { normalizeSettings, DEFAULT_SETTINGS, MAX_DEBOUNCE_MS } from '../src/lib/settings.js';
 
 const chromeTab = (props) => ({ incognito: false, pinned: false, active: false, groupId: -1, title: '', ...props });
 
@@ -52,6 +52,14 @@ test('ignore rules: substring, wildcard, comments', () => {
   assert.equal(ignored('https://bank.example.evil/'), false);
   assert.equal(ignored('https://example.com/'), false);
   assert.equal(ignored('# comment'), false);
+});
+
+test('rule kinds label each row of the settings list', () => {
+  assert.equal(ruleKind('youtube.com'), 'contains');
+  assert.equal(ruleKind(' https://*.bank.example/* '), 'wildcard');
+  assert.equal(ruleKind('# banking'), 'comment');
+  assert.equal(ruleKind('   '), null);
+  assert.equal(ruleKey(' YouTube.com '), ruleKey('youtube.com'));
 });
 
 test('hashes: titles change only the content hash, URLs change both', async () => {
@@ -117,6 +125,25 @@ test('settings are clamped and defaulted', () => {
   assert.deepEqual(s.ignoreRules, ['a']);
   // An emptied form field means "use the default", not "use the minimum".
   assert.equal(normalizeSettings({ debounceMs: '', maxSnapshots: '' }).debounceMs, DEFAULT_SETTINGS.debounceMs);
+});
+
+test('the debounce has a minimum but no practical maximum', () => {
+  assert.equal(normalizeSettings({ debounceMs: 90_000 }).debounceMs, 90_000);
+  assert.equal(normalizeSettings({ debounceMs: 6 * 60 * 60 * 1000 }).debounceMs, 6 * 60 * 60 * 1000);
+  // Only values no timer or date could hold are pulled back.
+  assert.equal(normalizeSettings({ debounceMs: 1e300 }).debounceMs, MAX_DEBOUNCE_MS);
+  assert.equal(normalizeSettings({ debounceMs: Infinity }).debounceMs, DEFAULT_SETTINGS.debounceMs);
+});
+
+test('ignore rules saved by the old text box load unchanged, duplicates dropped', () => {
+  // The text box already stored one array entry per line, so comments and wildcards carry over as rows.
+  const stored = ['chrome://newtab/', 'about:blank', '# banking', 'https://*.bank.example/*'];
+  assert.deepEqual(normalizeSettings({ ignoreRules: stored }).ignoreRules, stored);
+  assert.deepEqual(normalizeSettings({ ignoreRules: ['YouTube.com', ' youtube.com ', 'about:blank', ''] }).ignoreRules, [
+    'YouTube.com',
+    'about:blank',
+  ]);
+  assert.deepEqual(normalizeSettings({ ignoreRules: [] }).ignoreRules, []);
 });
 
 test('retention mode falls back to smart thinning and its numbers are clamped', () => {

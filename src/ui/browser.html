@@ -63,18 +63,32 @@
             <h2>Recording</h2>
             <label class="field">
               <span class="field-label">Wait after the last tab change</span>
-              <span class="field-input"><input id="debounce" type="number" min="0.25" max="10" step="0.25" required /> seconds</span>
-              <span class="hint">Lower means less to lose after a crash; higher means fewer writes while you open or close lots of tabs.</span>
-            </label>
-            <label class="field">
-              <span class="field-label">Never record these URLs</span>
-              <textarea id="ignore-rules" rows="5" spellcheck="false"></textarea>
+              <span class="field-input"><input id="debounce" type="number" min="0.25" step="0.25" required /> seconds</span>
               <span class="hint">
-                One rule per line. Plain text matches any URL containing it, <code>*</code> is a wildcard over the whole URL
-                (e.g. <code>https://*.bank.example/*</code>), lines starting with <code>#</code> are comments. Incognito windows are
-                never recorded.
+                Lower means less to lose after a crash; higher means fewer writes while lots of tabs change. Minimum 0.25 seconds.
               </span>
             </label>
+            <div class="field">
+              <span id="ignore-label" class="field-label">Never record these URLs</span>
+              <ul id="ignore-list" class="rules" aria-labelledby="ignore-label"></ul>
+              <p id="ignore-empty" class="rules-empty muted" hidden>Nothing is skipped: every page gets recorded.</p>
+              <div class="rule-add">
+                <input
+                  id="ignore-new"
+                  type="text"
+                  placeholder="Add a site or address, like youtube.com"
+                  aria-label="New URL to never record"
+                  spellcheck="false"
+                  autocomplete="off"
+                />
+                <button id="ignore-add" type="button">Add</button>
+              </div>
+              <span class="hint">
+                Any page whose address contains the text is skipped, so <code>youtube.com</code> covers all of YouTube. Use
+                <code>*</code> to stand for any text and match the whole address, like <code>https://*.bank.example/*</code>.
+                Incognito windows are never recorded.
+              </span>
+            </div>
           </section>
 
           <section class="card">
