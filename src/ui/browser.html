@@ -61,13 +61,16 @@
         <form id="settings-form" novalidate>
           <section class="card">
             <h2>Recording</h2>
-            <label class="field">
-              <span class="field-label">Wait after the last tab change</span>
-              <span class="field-input"><input id="debounce" type="number" min="0.25" step="0.25" required /> seconds</span>
+            <div class="field">
+              <label class="sentence">
+                Take a snapshot
+                <input id="debounce" class="num" type="number" min="0.25" step="0.25" required aria-label="Seconds to wait after the last tab change" />
+                <span class="unit" data-one="second" data-many="seconds">seconds</span> after the last tab change.
+              </label>
               <span class="hint">
                 Lower means less to lose after a crash; higher means fewer writes while lots of tabs change. Minimum 0.25 seconds.
               </span>
-            </label>
+            </div>
             <div class="field">
               <span id="ignore-label" class="field-label">Never record these URLs</span>
               <ul id="ignore-list" class="rules" aria-labelledby="ignore-label"></ul>
@@ -93,9 +96,10 @@
 
           <section class="card">
             <h2>Snapshot list</h2>
-            <label class="field inline">
-              <span class="field-label">Group snapshots into windows of</span>
-              <span class="field-input"><input id="group-minutes" type="number" min="1" max="60" step="1" required /> minutes</span>
+            <label class="sentence">
+              Group snapshots into windows of
+              <input id="group-minutes" class="num" type="number" min="1" max="60" step="1" required aria-label="Minutes per window in the snapshot list" />
+              <span class="unit" data-one="minute" data-many="minutes">minutes</span>.
             </label>
             <p class="hint">
               Each snapshot joins the nearest mark, seconds included: with 5 minutes, 3:42:29 goes to 3:40 and 3:42:31 to 3:45.
