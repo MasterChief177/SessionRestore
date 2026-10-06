@@ -92,23 +92,41 @@
           <section class="card">
             <h2>Retention</h2>
             <p class="hint">Applies to automatic snapshots. Manual snapshots are never deleted automatically.</p>
-            <label class="field inline">
-              <span class="field-label">Keep every snapshot for</span>
-              <span class="field-input"><input id="keep-all-hours" type="number" min="1" max="720" step="1" required /> hours</span>
-            </label>
-            <label class="field inline">
-              <span class="field-label">Then keep one per hour for up to</span>
-              <span class="field-input"><input id="hourly-days" type="number" min="0" max="365" step="1" required /> days</span>
-            </label>
-            <label class="field inline">
-              <span class="field-label">Then keep one per day for up to</span>
-              <span class="field-input"><input id="daily-days" type="number" min="1" max="3650" step="1" required /> days</span>
-            </label>
-            <label class="field inline">
-              <span class="field-label">Never keep more than</span>
-              <span class="field-input"><input id="max-snapshots" type="number" min="100" max="100000" step="100" required /> automatic snapshots</span>
-            </label>
-            <p class="hint">The last snapshot before each browser restart is kept for as long as the daily tier allows.</p>
+            <!-- Each mode is one sentence with its numbers as inline inputs. Clicking a mode selects it. -->
+            <div class="modes" role="radiogroup" aria-label="Retention mode">
+              <div class="mode" data-mode="thin">
+                <label class="mode-title">
+                  <input type="radio" name="retention-mode" value="thin" />
+                  Smart thinning
+                </label>
+                <p class="sentence">
+                  Keep every snapshot for
+                  <input id="keep-all-hours" class="num" type="number" min="1" max="720" step="1" required aria-label="Hours to keep every snapshot" />
+                  <span class="unit" data-one="hour" data-many="hours">hours</span>, then one per hour for
+                  <input id="hourly-days" class="num" type="number" min="0" max="365" step="1" required aria-label="Days to keep one snapshot per hour" />
+                  <span class="unit" data-one="day" data-many="days">days</span>, then one per day for
+                  <input id="daily-days" class="num" type="number" min="1" max="3650" step="1" required aria-label="Days to keep one snapshot per day" />
+                  <span class="unit" data-one="day" data-many="days">days</span>. After that, automatic snapshots are deleted.
+                </p>
+              </div>
+              <div class="mode" data-mode="everything">
+                <label class="mode-title">
+                  <input type="radio" name="retention-mode" value="everything" />
+                  Keep everything
+                </label>
+                <p class="sentence">
+                  Keep all automatic snapshots for
+                  <input id="everything-days" class="num" type="number" min="1" max="3650" step="1" required aria-label="Days to keep all automatic snapshots" />
+                  <span class="unit" data-one="day" data-many="days">days</span>, but never more than
+                  <input id="everything-max" class="num" type="number" min="10" max="100000" step="10" required aria-label="Most automatic snapshots to keep" />.
+                  If the limit is reached, the oldest go first.
+                </p>
+              </div>
+            </div>
+            <p class="hint">
+              Every period counts from when the snapshot was taken. The newest snapshot is always kept, and smart thinning also keeps
+              the last snapshot before each browser restart.
+            </p>
           </section>
 
           <section class="card">

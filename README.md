@@ -46,7 +46,9 @@ If the content hash matches the latest snapshot, nothing is written. If only the
 
 **Sessions.** Each browser run gets an id, kept in `chrome.storage.session`, which Chrome clears when it exits or crashes. When a new id is created, the newest snapshot from before is remembered as the "last session".
 
-**Retention** (automatic snapshots only, all configurable):
+**Retention** (automatic snapshots only). Pick one of two modes in Settings; each is a sentence where you just change the numbers.
+
+*Smart thinning* (default): keep every snapshot for 24 hours, then one per hour for 7 days, then one per day for 90 days. After that, automatic snapshots are deleted.
 
 | Age | Kept |
 |-----|------|
@@ -55,7 +57,11 @@ If the content hash matches the latest snapshot, nothing is written. If only the
 | 7 to 90 days | the newest per day |
 | older | nothing |
 
-Manual snapshots, the newest snapshot, and the final snapshot of each browser session (up to 90 days) are always kept. A hard cap (5000 automatic snapshots by default) is the safety net. Cleanup runs at startup and at most once an hour.
+The final snapshot of each browser session (up to 90 days) is kept too, and a hard cap of 5000 automatic snapshots is the safety net.
+
+*Keep everything*: keep all automatic snapshots for 30 days, but never more than 2000. If the limit is reached, the oldest go first.
+
+In both modes, manual snapshots and the newest snapshot are always kept. Cleanup runs at startup and at most once an hour.
 
 **Storage.** Snapshots live in IndexedDB; settings in `chrome.storage.local`.
 

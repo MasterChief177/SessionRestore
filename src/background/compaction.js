@@ -1,13 +1,18 @@
-// Retention rules for automatic snapshots.
+// Retention rules for automatic snapshots. There are two modes.
 //
+// Smart thinning ('thin'):
 //   younger than keepAllHours    keep everything
 //   younger than hourlyDays      keep the newest snapshot of each hour
 //   younger than dailyDays       keep the newest snapshot of each day
 //   older                        delete
+// Within dailyDays the last snapshot of each browser session is kept too, because that is
+// exactly the state you want after a crash. maxSnapshots caps the total as a safety net.
 //
-// Never deleted: manual snapshots, the newest snapshot overall, and (within dailyDays) the last
-// snapshot of each browser session, because that is exactly the state you want after a crash.
-// On top of that, maxSnapshots caps the number of automatic snapshots as a safety net.
+// Keep everything ('everything'):
+//   younger than everythingDays  keep everything, but at most everythingMax (the oldest go first)
+//   older                        delete
+//
+// In both modes, manual snapshots and the newest snapshot overall are never deleted.
 
 import { deleteSnapshots, getSnapshotIndex } from './db.js';
 import { getSettings } from '../lib/settings.js';
@@ -29,12 +34,14 @@ const dayKey = (ts) => {
  * Pure planning step: given { id, createdAt, kind, session } entries, return the ids to delete.
  */
 export function planCompaction(entries, settings, now = Date.now()) {
-  const { keepAllHours, hourlyDays, dailyDays, maxSnapshots } = settings;
+  const { keepAllHours, hourlyDays, dailyDays, everythingDays } = settings;
+  const everything = settings.retentionMode === 'everything';
+  const cap = everything ? settings.everythingMax : settings.maxSnapshots;
   const newestFirst = [...entries].sort((a, b) => b.createdAt - a.createdAt || b.id - a.id);
   const latestId = newestFirst[0]?.id;
 
   const doomed = [];
-  const kept = []; // automatic snapshots we keep, newest first (for the hard cap)
+  const kept = []; // automatic snapshots we keep, newest first (for the cap)
   const seenHours = new Set();
   const seenDays = new Set();
   const seenSessions = new Set();
@@ -51,7 +58,9 @@ export function planCompaction(entries, settings, now = Date.now()) {
 
     const age = now - entry.createdAt;
     let keep;
-    if (age < keepAllHours * HOUR) {
+    if (everything) {
+      keep = age < everythingDays * DAY;
+    } else if (age < keepAllHours * HOUR) {
       keep = true;
     } else if (age < hourlyDays * DAY) {
       const key = hourKey(entry.createdAt);
@@ -69,8 +78,8 @@ export function planCompaction(entries, settings, now = Date.now()) {
     else doomed.push(entry.id);
   }
 
-  if (kept.length > maxSnapshots) {
-    doomed.push(...kept.slice(maxSnapshots).map((entry) => entry.id));
+  if (kept.length > cap) {
+    doomed.push(...kept.slice(cap).map((entry) => entry.id));
   }
   return doomed;
 }
