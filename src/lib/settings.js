@@ -1,10 +1,12 @@
 // Small user settings, stored in chrome.storage.local under a single key.
 // Snapshots themselves live in IndexedDB (see background/db.js).
 
+import { ruleKey } from './ignore.js';
+
 export const SETTINGS_KEY = 'settings';
 
 export const DEFAULT_SETTINGS = Object.freeze({
-  // Wait this long after the last tab change before writing a snapshot.
+  // Wait this long after the last tab change before writing a snapshot. No upper limit in the UI.
   debounceMs: 1500,
   // How automatic snapshots are retired. Manual snapshots are never deleted automatically.
   //   'thin'        keep everything, then one per hour, then one per day (the tiers below)
@@ -34,12 +36,30 @@ function clampInt(value, min, max, fallback) {
 
 export const RETENTION_MODES = Object.freeze(['thin', 'everything']);
 
+// The debounce has no real maximum; this only keeps absurd values inside what timers and dates can hold.
+export const MIN_DEBOUNCE_MS = 250;
+export const MAX_DEBOUNCE_MS = 365 * 24 * 60 * 60 * 1000;
+
+/** Trimmed, non-empty, without duplicates (rules match case-insensitively), oldest first. */
+function normalizeRules(rules) {
+  const seen = new Set();
+  const out = [];
+  for (const rule of rules) {
+    if (typeof rule !== 'string') continue;
+    const text = rule.trim();
+    if (!text || seen.has(ruleKey(text))) continue;
+    seen.add(ruleKey(text));
+    out.push(text);
+  }
+  return out.slice(0, 500);
+}
+
 export function normalizeSettings(raw) {
   const input = raw && typeof raw === 'object' ? raw : {};
   const d = DEFAULT_SETTINGS;
   const hourlyDays = clampInt(input.hourlyDays, 0, 365, d.hourlyDays);
   return {
-    debounceMs: clampInt(input.debounceMs, 250, 10_000, d.debounceMs),
+    debounceMs: clampInt(input.debounceMs, MIN_DEBOUNCE_MS, MAX_DEBOUNCE_MS, d.debounceMs),
     retentionMode: RETENTION_MODES.includes(input.retentionMode) ? input.retentionMode : d.retentionMode,
     keepAllHours: clampInt(input.keepAllHours, 1, 24 * 30, d.keepAllHours),
     hourlyDays,
@@ -47,13 +67,7 @@ export function normalizeSettings(raw) {
     everythingDays: clampInt(input.everythingDays, 1, 3650, d.everythingDays),
     everythingMax: clampInt(input.everythingMax, 10, 100_000, d.everythingMax),
     maxSnapshots: clampInt(input.maxSnapshots, 100, 100_000, d.maxSnapshots),
-    ignoreRules: Array.isArray(input.ignoreRules)
-      ? input.ignoreRules
-          .filter((rule) => typeof rule === 'string')
-          .map((rule) => rule.trim())
-          .filter(Boolean)
-          .slice(0, 500)
-      : [...d.ignoreRules],
+    ignoreRules: Array.isArray(input.ignoreRules) ? normalizeRules(input.ignoreRules) : [...d.ignoreRules],
     lazyRestore: typeof input.lazyRestore === 'boolean' ? input.lazyRestore : d.lazyRestore,
     groupMinutes: clampInt(input.groupMinutes, 1, 60, d.groupMinutes),
   };

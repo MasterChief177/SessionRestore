@@ -6,7 +6,7 @@
   "description": "Keeps a running history of your open tabs so you can get them back after a crash. Export any snapshot as Markdown.",
   "minimum_chrome_version": "110",
   "incognito": "not_allowed",
-  "permissions": ["tabs", "tabGroups", "storage"],
+  "permissions": ["tabs", "tabGroups", "storage", "alarms"],
   "background": {
     "service_worker": "src/background/service-worker.js",
     "type": "module"

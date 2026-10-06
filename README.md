@@ -37,12 +37,12 @@ Works in Chrome 110+ and other Chromium browsers (Edge, Brave, Vivaldi).
 
 ## How it works
 
-**Recording.** The service worker listens to tab, window and tab group events. Each event resets a 1.5 second timer; when it fires, the extension reads all windows and tabs, drops ignored URLs and incognito windows, and computes two hashes:
+**Recording.** The service worker listens to tab, window and tab group events. Each event resets a timer (1.5 seconds by default, any length from 0.25 seconds up in Settings); when it fires, the extension reads all windows and tabs, drops ignored URLs and incognito windows, and computes two hashes:
 
 - a *structure* hash (which URLs are open, in which order, pinned or grouped)
 - a *content* hash (also titles, the active tab, focus, group names)
 
-If the content hash matches the latest snapshot, nothing is written. If only the content changed and the latest snapshot is an automatic one from this browser session, it's updated in place. Otherwise a new snapshot is added. If events never stop, a snapshot is still written at least every 10 seconds. Worst case after a crash, you lose the last couple of seconds.
+If the content hash matches the latest snapshot, nothing is written. If only the content changed and the latest snapshot is an automatic one from this browser session, it's updated in place. Otherwise a new snapshot is added. If events never stop, a snapshot is still written at least every 10 seconds, or every two waits if you set a wait longer than 5 seconds. Chrome stops an idle service worker after about 30 seconds, so waits longer than 20 seconds also set an alarm that wakes it up to write the snapshot. Worst case after a crash with the default wait, you lose the last couple of seconds.
 
 **Sessions.** Each browser run gets an id, kept in `chrome.storage.session`, which Chrome clears when it exits or crashes. When a new id is created, the newest snapshot from before is remembered as the "last session".
 
@@ -92,6 +92,7 @@ Windows without groups skip the `###` headings. Ungrouped tabs are listed in tab
 | `tabs` | Read the URL and title of open tabs |
 | `tabGroups` | Read and recreate tab group names and colors |
 | `storage` | Settings and the current session id |
+| `alarms` | Write the snapshot on time when the wait in Settings is longer than Chrome keeps the extension awake |
 
 No host permissions, no remote code, no network requests. Exports are downloaded straight from the extension page, so the `downloads` permission isn't needed either.
 
@@ -118,6 +119,7 @@ src/
 │   ├── markdown.js         Markdown export/import
 │   ├── backup.js           JSON backup, import entry point
 │   ├── restore.js          batched, lazy restore
+│   ├── debounce.js         when the next automatic snapshot is due
 │   ├── settings.js         defaults and validation
 │   └── ignore.js           URL ignore rules
 └── ui/                     popup, main page (Snapshots + Settings tabs)

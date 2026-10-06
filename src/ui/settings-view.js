@@ -1,12 +1,112 @@
 // The Settings tab of the main page.
 
 import { countSnapshots, getSnapshotIndex } from '../background/db.js';
+import { ruleKey, ruleKind } from '../lib/ignore.js';
 import { getSettings, resetSettings, saveSettings } from '../lib/settings.js';
-import { busy, formatBytes, plural, send, toast } from './common.js';
+import { busy, formatBytes, h, icon, plural, send, toast } from './common.js';
 
 const $ = (id) => document.getElementById(id);
 const modes = () => document.querySelectorAll('.mode');
 const sentenceInputs = () => document.querySelectorAll('.sentence .num');
+const ruleInputs = () => [...document.querySelectorAll('#ignore-list .rule-text')];
+
+// ---------------------------------------------------------------------------
+// "Never record these URLs": one editable row per rule, saved with the rest of the form.
+
+const RULE_KINDS = {
+  contains: { label: 'contains', title: 'Skips every address that contains this text' },
+  wildcard: { label: 'pattern', title: '* stands for anything; the whole address has to fit the pattern' },
+  comment: { label: 'note', title: "A note, not a rule: it doesn't skip anything" },
+};
+
+function showRuleKind(row) {
+  const kind = ruleKind(row.querySelector('.rule-text').value);
+  const badge = row.querySelector('.rule-kind');
+  badge.hidden = !kind;
+  badge.textContent = kind ? RULE_KINDS[kind].label : '';
+  badge.title = kind ? RULE_KINDS[kind].title : '';
+  badge.classList.toggle('kind-pattern', kind === 'wildcard');
+  row.classList.toggle('comment', kind === 'comment');
+}
+
+function ruleRow(rule) {
+  const row = h(
+    'li',
+    { class: 'rule' },
+    h('input', {
+      class: 'rule-text',
+      type: 'text',
+      value: rule,
+      spellcheck: 'false',
+      autocomplete: 'off',
+      'aria-label': 'URL to never record',
+    }),
+    h('span', { class: 'kind rule-kind' }),
+    h('button', { class: 'icon rule-remove', type: 'button', title: 'Remove', 'aria-label': 'Remove this URL' }, icon('close')),
+  );
+  showRuleKind(row);
+  return row;
+}
+
+function showRulesEmpty() {
+  const empty = !$('ignore-list').children.length;
+  $('ignore-list').hidden = empty;
+  $('ignore-empty').hidden = !empty;
+}
+
+function renderRules(rules) {
+  $('ignore-list').replaceChildren(...rules.map(ruleRow));
+  showRulesEmpty();
+}
+
+function addRule() {
+  const input = $('ignore-new');
+  const text = input.value.trim();
+  input.focus();
+  if (!text) return;
+  const existing = ruleInputs().find((el) => ruleKey(el.value) === ruleKey(text));
+  if (existing) {
+    const match = existing.closest('.rule');
+    match.classList.remove('flash');
+    void match.offsetWidth; // restart the highlight on repeated tries
+    match.classList.add('flash');
+    toast('That one is already on the list');
+    return;
+  }
+  const row = ruleRow(text);
+  row.classList.add('fade-in');
+  $('ignore-list').append(row);
+  showRulesEmpty();
+  input.value = '';
+}
+
+function removeRule(row) {
+  // Keep keyboard focus in the list: the next row, else the previous one, else the add box.
+  const next = row.nextElementSibling ?? row.previousElementSibling;
+  row.remove();
+  (next?.querySelector('.rule-remove') ?? $('ignore-new')).focus();
+  showRulesEmpty();
+}
+
+function initRules() {
+  $('ignore-add').prepend(icon('plus'));
+  $('ignore-add').addEventListener('click', addRule);
+  $('ignore-new').addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' || event.isComposing) return;
+    event.preventDefault(); // add the rule instead of submitting the form
+    addRule();
+  });
+  $('ignore-list').addEventListener('input', (event) => {
+    const row = event.target.closest('.rule');
+    if (row) showRuleKind(row);
+  });
+  $('ignore-list').addEventListener('click', (event) => {
+    const button = event.target.closest('.rule-remove');
+    if (button) removeRule(button.closest('.rule'));
+  });
+}
+
+// ---------------------------------------------------------------------------
 
 function setMode(mode) {
   for (const el of modes()) {
@@ -25,7 +125,8 @@ function fitSentenceInput(input) {
 
 function fill(settings) {
   $('debounce').value = settings.debounceMs / 1000;
-  $('ignore-rules').value = settings.ignoreRules.join('\n');
+  renderRules(settings.ignoreRules);
+  $('ignore-new').value = '';
   $('keep-all-hours').value = settings.keepAllHours;
   $('hourly-days').value = settings.hourlyDays;
   $('daily-days').value = settings.dailyDays;
@@ -40,7 +141,8 @@ function fill(settings) {
 function read() {
   return {
     debounceMs: $('debounce').value === '' ? '' : Number($('debounce').value) * 1000,
-    ignoreRules: $('ignore-rules').value.split('\n'),
+    // Text typed into the add box but not added yet counts too.
+    ignoreRules: [...ruleInputs().map((el) => el.value), $('ignore-new').value],
     keepAllHours: $('keep-all-hours').value,
     hourlyDays: $('hourly-days').value,
     dailyDays: $('daily-days').value,
@@ -84,6 +186,7 @@ export function initSettingsView({ onCleanup = () => {} } = {}) {
     el.querySelector('input[type=radio]').addEventListener('change', () => setMode(el.dataset.mode));
   }
   for (const input of sentenceInputs()) input.addEventListener('input', () => fitSentenceInput(input));
+  initRules();
 
   $('settings-form').addEventListener('submit', async (event) => {
     event.preventDefault();
