@@ -133,9 +133,9 @@ function fill(settings) {
   $('everything-days').value = settings.everythingDays;
   $('everything-max').value = settings.everythingMax;
   setMode(settings.retentionMode);
-  sentenceInputs().forEach(fitSentenceInput);
   $('lazy-restore').checked = settings.lazyRestore;
   $('group-minutes').value = settings.groupMinutes;
+  sentenceInputs().forEach(fitSentenceInput);
 }
 
 function read() {
